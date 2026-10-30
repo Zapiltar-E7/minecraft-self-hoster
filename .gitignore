@@ -1,0 +1,15 @@
+bin/
+obj/
+src/publish/
+*.user
+.vs/
+
+# a server and the app's own files, if the app is run from inside the repo
+server/
+servers/
+backups/
+tools/
+data/
+host-config.json
+map-link.txt
+*.exe

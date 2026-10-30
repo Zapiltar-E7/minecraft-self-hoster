@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minecraft Server Host</title>
+<meta name="description" content="Run a Minecraft Java server on your own PC and let friends join, with or without port forwarding. One Windows app, nothing to install.">
+<link rel="icon" href="img/icon.png">
+<style>
+  :root {
+    --bg: #16171a; --card: #1f2125; --line: #2a2d33; --field: #26292e;
+    --text: #ecedef; --muted: #8e939c; --accent: #7cc4ff; --on-accent: #0e1a24;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+  header { border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; gap: 12px; height: 60px; }
+  header img { width: 28px; height: 28px; }
+  header .name { font-weight: 600; }
+  header nav { margin-left: auto; display: flex; gap: 22px; font-size: 14px; }
+  header nav a { color: var(--muted); }
+  header nav a:hover { color: var(--text); text-decoration: none; }
+
+  .hero { padding: 72px 0 40px; text-align: center; }
+  .hero h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.15; margin: 0 0 16px; letter-spacing: -0.02em; }
+  .hero p { color: var(--muted); font-size: 19px; max-width: 640px; margin: 0 auto 30px; }
+  .buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 9px;
+    font-weight: 600; font-size: 15px; background: var(--field); color: var(--text); border: 1px solid var(--line);
+  }
+  .btn:hover { text-decoration: none; background: #30333a; }
+  .btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .btn.primary:hover { background: #9ad3ff; }
+  .small { color: var(--muted); font-size: 13px; margin-top: 14px; }
+
+  .shot { margin: 44px auto 0; max-width: 1040px; }
+  .shot img, .gallery img {
+    width: 100%; display: block; border-radius: 10px; border: 1px solid var(--line);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+
+  section { padding: 72px 0 0; }
+  h2 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .lead { color: var(--muted); margin: 0 0 32px; max-width: 640px; }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px 40px; }
+  .feature h3 { font-size: 16px; margin: 0 0 6px; }
+  .feature p { margin: 0; color: var(--muted); font-size: 15px; }
+  .feature .bar { width: 26px; height: 3px; border-radius: 2px; background: var(--accent); margin-bottom: 14px; }
+
+  .ways { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .way { border-top: 1px solid var(--line); padding-top: 20px; }
+  .way h3 { margin: 0 0 6px; font-size: 18px; }
+  .way p { margin: 0; color: var(--muted); }
+  .flow { font: 13px/1.5 Consolas, "Cascadia Mono", monospace; color: var(--text); background: #121316; border-radius: 8px; padding: 12px 14px; margin-top: 14px; overflow-x: auto; white-space: nowrap; }
+
+  .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .gallery figure { margin: 0; }
+  .gallery figcaption { color: var(--muted); font-size: 14px; margin-top: 10px; }
+
+  ol.steps { padding-left: 20px; margin: 0; max-width: 720px; }
+  ol.steps li { margin-bottom: 10px; }
+  ol.steps li::marker { color: var(--accent); font-weight: 600; }
+
+  footer { margin-top: 90px; border-top: 1px solid var(--line); padding: 26px 0 40px; color: var(--muted); font-size: 13px; }
+  footer .wrap { display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; }
+
+  @media (max-width: 820px) {
+    .features { grid-template-columns: 1fr 1fr; }
+    .ways, .gallery { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .wrap { padding: 0 16px; }
+    .features { grid-template-columns: 1fr; }
+    header nav a.hide-sm { display: none; }
+    .hero { padding-top: 48px; }
+    .hero p { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <img src="img/icon.png" alt="">
+    <span class="name">Minecraft Server Host</span>
+    <nav>
+      <a href="#features" class="hide-sm">Features</a>
+      <a href="#screenshots" class="hide-sm">Screenshots</a>
+      <a href="https://github.com/Zapiltar-E7/minecraft-self-hoster/blob/main/GUIDE.md">Guide</a>
+      <a href="https://github.com/Zapiltar-E7/minecraft-self-hoster">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <h1>Your own Minecraft server,<br>one app away.</h1>
+    <p>Run a Minecraft Java server on your PC and let friends join from anywhere, with or without port forwarding. Plugins, mods, modpacks, backups and more, without touching a command line.</p>
+    <div class="buttons">
+      <a class="btn primary" href="https://github.com/Zapiltar-E7/minecraft-self-hoster/releases/latest/download/MinecraftServerHost.exe">Download for Windows</a>
+      <a class="btn" href="https://github.com/Zapiltar-E7/minecraft-self-hoster">View on GitHub</a>
+    </div>
+    <div class="small">Free and open source · Windows 10 and 11 · Nothing to install</div>
+    <div class="shot"><img src="img/server.png" alt="The app's Server page, with the sidebar on the left"></div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>Everything a small server needs</h2>
+      <p class="lead">Set it up once, then just press Start.</p>
+      <div class="features">
+        <div class="feature"><div class="bar"></div><h3>Any server type</h3><p>Paper, Fabric, Quilt, Forge, NeoForge or Vanilla, any version. Switching backs up your worlds first.</p></div>
+        <div class="feature"><div class="bar"></div><h3>Modpacks in one step</h3><p>Drop in a Modrinth or CurseForge pack. The exact loader, mods and configs are installed, and client-only mods are switched off.</p></div>
+        <div class="feature"><div class="bar"></div><h3>Plugins and mods</h3><p>See which ones work on your version, update them from Modrinth or CurseForge, and drag new ones onto the window.</p></div>
+        <div class="feature"><div class="bar"></div><h3>Readable configs</h3><p>Every setting in a grid with its description. Comments and formatting are kept, and every save is backed up.</p></div>
+        <div class="feature"><div class="bar"></div><h3>Backups and restarts</h3><p>Automatic world backups, scheduled restarts with in-game warnings, and recovery after a crash.</p></div>
+        <div class="feature"><div class="bar"></div><h3>Performance at a glance</h3><p>TPS, tick time, memory and CPU with live graphs, and a console with filters and search.</p></div>
+        <div class="feature"><div class="bar"></div><h3>Maps and voice chat</h3><p>BlueMap, Dynmap, Simple Voice Chat, Geyser and others are found automatically, with what each one needs.</p></div>
+        <div class="feature"><div class="bar"></div><h3>Move it anywhere</h3><p>Pack a whole server into one file and bring it back on another PC, worlds and settings included.</p></div>
+        <div class="feature"><div class="bar"></div><h3>Make it yours</h3><p>75 menu colours and 24 highlight colours. Updates itself, if you want it to.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="join">
+    <div class="wrap">
+      <h2>Two ways for friends to join</h2>
+      <p class="lead">Pick whichever fits your network. You can change it any time.</p>
+      <div class="ways">
+        <div class="way">
+          <h3>No router setup</h3>
+          <p>A free playit.gg tunnel carries your friends' connection to your PC. Nothing to change on your router.</p>
+          <div class="flow">Friend → playit.gg → tunnel → your PC</div>
+        </div>
+        <div class="way">
+          <h3>Port forwarding</h3>
+          <p>Already forward ports? Friends connect straight to your public address. No third-party service at all.</p>
+          <div class="flow">Friend → your router → your PC</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screenshots">
+    <div class="wrap">
+      <h2>A look inside</h2>
+      <p class="lead">A sidebar for the server, a page for each job.</p>
+      <div class="gallery">
+        <figure><img src="img/logs.png" alt="Logs page" loading="lazy"><figcaption>Live console and performance graphs</figcaption></figure>
+        <figure><img src="img/configs.png" alt="Configs page" loading="lazy"><figcaption>Config files as readable settings</figcaption></figure>
+        <figure><img src="img/plugins.png" alt="Plugins page" loading="lazy"><figcaption>Plugins with update checks</figcaption></figure>
+        <figure><img src="img/connections.png" alt="Connections page" loading="lazy"><figcaption>How friends reach the server</figcaption></figure>
+        <figure><img src="img/settings.png" alt="Appearance settings" loading="lazy"><figcaption>Menu and highlight colours</figcaption></figure>
+        <figure><img src="img/players-nether.png" alt="Players section in a red colour scheme" loading="lazy"><figcaption>Whitelist and operators, in another colour scheme</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="wrap">
+      <h2>Getting started</h2>
+      <p class="lead">About five minutes, most of it downloading.</p>
+      <ol class="steps">
+        <li><a href="https://github.com/Zapiltar-E7/minecraft-self-hoster/releases/latest/download/MinecraftServerHost.exe">Download the app</a> and put it in its own folder.</li>
+        <li>Run it and click <b>Set up this PC</b>. Java and anything else needed is downloaded from the official sources and checked.</li>
+        <li>Pick a server type and version and click <b>Install</b>, or open a server folder you already have.</li>
+        <li>Press <b>Start</b> and send your friends the address from the Connections page.</li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Minecraft Server Host · <a href="https://github.com/Zapiltar-E7/minecraft-self-hoster/blob/main/LICENSE">MIT License</a></span>
+    <span>Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.</span>
+  </div>
+</footer>
+</body>
+</html>
