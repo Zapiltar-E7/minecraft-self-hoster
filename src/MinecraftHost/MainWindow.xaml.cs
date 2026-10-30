@@ -222,7 +222,7 @@ public partial class MainWindow : Window
     void LayoutServerCards(bool animate)
     {
         var section = SecPlayers.IsChecked == true ? SecPlayers : SecWorld.IsChecked == true ? SecWorld : SecUpkeep.IsChecked == true ? SecUpkeep : SecGeneral;
-        var two = ServerCards.ActualWidth >= 640 || ServerCards.ActualWidth == 0;
+        var two = false;   // one column of panels (mockup B)
         if (two == _serverTwo && section == _serverLaidOut) return;
         var changed = section != _serverLaidOut;
         var sections = new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep };
@@ -271,20 +271,6 @@ public partial class MainWindow : Window
             foreach (var child in LogicalTreeHelper.GetChildren(node).OfType<DependencyObject>()) Walk(child);
         }
         Walk(MainContent);
-    }
-
-    // Tools tab cards: three columns when there's room, otherwise two
-    void ToolsPage_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        var three = ToolsPage.ActualWidth >= 900;
-        if (three == (ToolsCol2.Children.Count > 0)) return;
-        foreach (var col in new[] { ToolsCol0, ToolsCol1, ToolsCol2 }) col.Children.Clear();
-        ToolsCol0.Children.Add(ToolsPcCard);
-        ToolsCol1.Children.Add(ToolsServerCard);
-        (three ? ToolsCol2 : ToolsCol1).Children.Add(ToolsMoveCard);
-        ToolsGap2.Width = new GridLength(three ? 12 : 0);
-        ToolsCol2Width.Width = three ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-        TrimSectionLines();
     }
 
     // ------------------------------------------------------------ set up this PC

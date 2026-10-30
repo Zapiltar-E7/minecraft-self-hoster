@@ -96,7 +96,7 @@ public partial class MainWindow
         panel.Children.Add(new TextBlock { Text = "CREDITS", Style = (Style)FindResource("CardTitle"), Margin = new Thickness(0, 20, 0, 6) });
         foreach (var (name, what) in new[]
         {
-            ("NVorbis", "MIT License, © 2020 Andrew Ward. Plays Minecraft's sounds for the creeper."),
+            ("NVorbis", "MIT License, © 2020 Andrew Ward. Plays Minecraft's sounds for a small easter egg."),
             ("playit.gg", "Tunnels so friends can join without port forwarding."),
             ("Cloudflare", "Quick links for web maps."),
             ("Eclipse Temurin", "The Java the server runs on."),

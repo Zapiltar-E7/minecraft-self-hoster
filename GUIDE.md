@@ -216,13 +216,13 @@ Every download comes from the official source and is checked against its publish
 - **Left running?** If the app closed while the server was still running, the next time it opens it offers to stop that server safely.
 - **What's using TPS?** (Logs tab, TPS tile): records what the server spends its time on for 60 seconds with spark (built into Paper) and opens the report in your browser. The report is uploaded to spark.lucko.me so it can be viewed.
 - **Low disk space:** when the server's drive has less than 10 GB free, the Server tab shows a warning, and automatic backups are skipped rather than filling the drive.
-- **Disk space** (Tools): what's using room, largest first: worlds, the map, plugin data, logs, backups.
+- **Disk space** (Tools): what's using room, largest first: worlds, the map, plugin data, logs, backups. Each row has a folder button and, where it makes sense, a delete button (with the server stopped; it says what you'd lose and asks first).
 - **System tray** (Settings): minimizing hides the app to an icon by the clock. Click it to come back, or right-click to start or stop the server.
 
 ## Appearance
 
 **Settings → Appearance:**
-- **Highlight colour:** the colour of the open page, buttons and switches. **Auto** uses the menu colour's own, or pick one of 24.
+- **Highlight colour:** the colour of the open page, buttons and switches. **Auto** uses the menu colour's own; pick one of 24, or the last swatch (+) for any colour.
 - **Menu colour:** the background, sidebar and text colours. 75 to choose from, each shown as a small preview: Default, Dark, OLED (pure black) and Light, Minecraft ones (Diamond, Redstone, Sculk, The End, Cherry Grove...), colour moods (Ocean, Synthwave, Sakura, Matrix...), classic editor schemes (Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night...) and light ones (Paper, Sky, Solarized Light...).
 - **Animations:** fades and slides for pages, the sidebar, panels and colour changes. Switch it off for instant changes.
 

@@ -158,24 +158,14 @@ public partial class MainWindow
     }
 
     // Settings cards: the same column widths as the Tools tab
-    void SettingsPage_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        if (SettingsCol0.Children.Count > 0) return;
-        // Startup and Sounds side by side; Appearance stays across the full width below them (its colour tiles need the room)
-        foreach (var (card, col) in new[] { (StartupCard, SettingsCol0), (SoundsCard, SettingsCol1) })
-        {
-            (card.Parent as System.Windows.Controls.Panel)?.Children.Remove(card);
-            col.Children.Add(card);
-        }
-        TrimSectionLines();
-    }
-
     /// <summary>A menu colour tile: the theme's colours, with the highlight picked (or its own) as the accent.</summary>
     public sealed record ThemeChoice(string Name, string Group, System.Windows.Media.Brush Bg, System.Windows.Media.Brush Card,
         System.Windows.Media.Brush Border, System.Windows.Media.Brush Text, System.Windows.Media.Brush Muted, System.Windows.Media.Brush Accent);
 
-    /// <summary>A highlight colour swatch; Name null is Auto (the menu colour's own).</summary>
-    public sealed record HighlightChoice(string? Name, string Label, System.Windows.Media.Brush Color, Visibility Auto);
+    /// <summary>A highlight colour swatch; Name null is Auto (the menu colour's own), "custom" opens the colour picker.</summary>
+    public sealed record HighlightChoice(string? Name, string Label, System.Windows.Media.Brush Color, Visibility Auto, Visibility Plus = Visibility.Collapsed);
+
+    const string CustomSwatch = "custom";
 
     bool _pickingLook;   // the pickers' selection is being set from code
 
@@ -206,9 +196,23 @@ public partial class MainWindow
         var own = Themes.Resolve(Themes.Current)["Accent"];
         var swatches = new List<HighlightChoice> { new(null, $"Auto: {Themes.Current.Name}'s own", B(own), Visibility.Visible) };
         swatches.AddRange(Themes.Highlights.Select(h => new HighlightChoice(h.Name, h.Name, B(Themes.Resolve(Themes.Current, h)["Accent"]), Visibility.Collapsed)));
+        // the last swatch: the custom colour when one is in use, otherwise a rainbow with a +
+        var custom = Themes.IsCustom(Themes.CurrentHighlight);
+        System.Windows.Media.Brush rainbow;
+        if (custom) rainbow = B(Themes.Get("Accent"));
+        else
+        {
+            var g = new System.Windows.Media.LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+            foreach (var (hex, at) in new[] { ("#FF5C5C", 0.0), ("#F5C451", 0.25), ("#6CD98A", 0.5), ("#4C8DFF", 0.75), ("#C77DFF", 1.0) })
+                g.GradientStops.Add(new System.Windows.Media.GradientStop(Themes.Parse(hex), at));
+            g.Freeze();
+            rainbow = g;
+        }
+        swatches.Add(new HighlightChoice(CustomSwatch, custom ? $"Custom ({Themes.CurrentHighlight!.Name}). Click to change it." : "Pick any colour...",
+            rainbow, Visibility.Collapsed, custom ? Visibility.Collapsed : Visibility.Visible));
         HighlightList.ItemsSource = swatches;
-        HighlightList.SelectedItem = swatches.First(h => h.Name == Themes.CurrentHighlight?.Name);
-        HighlightName.Text = Themes.CurrentHighlight?.Name ?? "Auto";
+        HighlightList.SelectedItem = custom ? swatches[^1] : swatches.First(h => h.Name == Themes.CurrentHighlight?.Name);
+        HighlightName.Text = custom ? Themes.CurrentHighlight!.Name : Themes.CurrentHighlight?.Name ?? "Auto";
         _pickingLook = false;
     }
 
@@ -221,7 +225,22 @@ public partial class MainWindow
     void HighlightList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         if (_loading || _pickingLook || HighlightList.SelectedItem is not HighlightChoice choice || choice.Name == Themes.CurrentHighlight?.Name) return;
+        if (choice.Name == CustomSwatch) { PickCustomHighlight(); return; }
         ApplyLook(Themes.Current.Name, choice.Name);
+    }
+
+    /// <summary>The custom swatch, clicked while it's already the one in use: change the colour.</summary>
+    void HighlightList_PreviewMouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if ((e.OriginalSource as FrameworkElement)?.DataContext is HighlightChoice { Name: CustomSwatch } && Themes.IsCustom(Themes.CurrentHighlight))
+            Dispatcher.BeginInvoke(PickCustomHighlight);
+    }
+
+    void PickCustomHighlight()
+    {
+        var picked = PickColor(Themes.Get("Accent"));
+        if (picked != null) ApplyLook(Themes.Current.Name, picked);
+        else Dispatcher.BeginInvoke(FillLookPickers);   // back to the swatch that was in use
     }
 
     void ApplyLook(string theme, string? highlight)

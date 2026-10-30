@@ -88,7 +88,7 @@ public sealed class MinecraftAssets
                 catch { }
             }
         }
-        catch (Exception ex) { Log.Host("Couldn't read Minecraft's sounds for the creeper: " + ex.Message); }
+        catch (Exception ex) { Log.Host("Couldn't read Minecraft's sounds for the easter egg: " + ex.Message); }
         return new MinecraftAssets { Fuse = fuse, Explosions = explosions, ExplosionFrames = frames };
     }
 

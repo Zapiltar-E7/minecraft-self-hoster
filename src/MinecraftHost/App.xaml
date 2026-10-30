@@ -169,10 +169,11 @@
     </Style>
     <!-- a whole-page area (a list, an editor, the console): flat, no hairline -->
     <Style x:Key="PaneStyle" TargetType="Border">
-      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Background" Value="{DynamicResource Card}"/>
+      <Setter Property="CornerRadius" Value="10"/>
       <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}"/>
       <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Padding" Value="14,12,14,12"/>
       <Setter Property="Margin" Value="0"/>
     </Style>
     <!-- something that needs noticing (setup missing, disk nearly full): still a filled, rounded box -->
@@ -214,6 +215,63 @@
       </Setter>
     </Style>
     <!-- editable input -->
+    <!-- ===== panels (since 2026-10-30): groups of setting rows on a soft panel, a small title above each group ===== -->
+    <Style x:Key="GroupTitle" TargetType="TextBlock" BasedOn="{StaticResource CardTitle}">
+      <Setter Property="Margin" Value="2,0,0,8"/>
+    </Style>
+    <!-- a group: its title and panel (code deals these into the page by name) -->
+    <Style x:Key="Group" TargetType="StackPanel">
+      <Setter Property="Margin" Value="0,0,0,22"/>
+    </Style>
+    <Style x:Key="GroupPanel" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource Card}"/>
+      <Setter Property="CornerRadius" Value="10"/>
+    </Style>
+    <!-- a switch on the right of a row: no label of its own (the row's title is), flush with the row's edge -->
+    <Style x:Key="RowSwitch" TargetType="CheckBox" BasedOn="{StaticResource Switch}">
+      <Setter Property="Margin" Value="0,0,-10,0"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style TargetType="local:SettingRow">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Bg}"/>
+      <Setter Property="BorderThickness" Value="0,0,0,1"/>
+      <Setter Property="Padding" Value="16,11"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="local:SettingRow">
+            <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
+              <StackPanel>
+                <DockPanel MinHeight="34">
+                  <Border x:Name="IconBox" DockPanel.Dock="Left" Width="32" Height="32" CornerRadius="8" Background="{DynamicResource Field}" Margin="0,0,14,0" VerticalAlignment="Center">
+                    <TextBlock Text="{TemplateBinding Icon}" FontFamily="{StaticResource Icons}" FontSize="14" Foreground="{DynamicResource Accent}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                  <ContentPresenter DockPanel.Dock="Right" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{TemplateBinding Title}" FontSize="13.5" TextWrapping="Wrap"/>
+                    <ContentPresenter x:Name="HintHost" Content="{TemplateBinding Hint}" Margin="0,1,0,0"
+                                      TextElement.Foreground="{DynamicResource Muted}" TextElement.FontSize="11.5">
+                      <ContentPresenter.Resources>
+                        <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style>
+                      </ContentPresenter.Resources>
+                    </ContentPresenter>
+                  </StackPanel>
+                </DockPanel>
+                <ContentPresenter x:Name="BelowHost" Content="{TemplateBinding Below}" Margin="46,10,0,3"/>
+              </StackPanel>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="Icon" Value="{x:Null}"><Setter TargetName="IconBox" Property="Visibility" Value="Collapsed"/></Trigger>
+              <Trigger Property="Hint" Value="{x:Null}"><Setter TargetName="HintHost" Property="Visibility" Value="Collapsed"/></Trigger>
+              <Trigger Property="Below" Value="{x:Null}"><Setter TargetName="BelowHost" Property="Visibility" Value="Collapsed"/></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
     <Style x:Key="Input" TargetType="TextBox">
       <Setter Property="Foreground" Value="{DynamicResource Text}"/>
       <Setter Property="CaretBrush" Value="{DynamicResource Text}"/>

@@ -27,7 +27,18 @@ public static class Themes
         new("Sand", "#E3B26B"), new("Copper", "#E5844F"), new("Silver", "#A9B4C2"), new("White", "#E8E8E8"),
     };
 
-    public static Highlight? FindHighlight(string? name) => Highlights.FirstOrDefault(h => h.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+    /// <summary>A named highlight, or a custom one saved as "#RRGGBB" (the colour picker).</summary>
+    public static Highlight? FindHighlight(string? name)
+    {
+        if (name is { Length: 7 } && name[0] == '#')
+        {
+            try { Parse(name); return new Highlight(name.ToUpperInvariant(), name.ToUpperInvariant()); }
+            catch (FormatException) { return null; }
+        }
+        return Highlights.FirstOrDefault(h => h.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public static bool IsCustom(Highlight? h) => h?.Name.StartsWith('#') == true;
 
     /// <summary>What the palette holds: the base keys each theme lists, the rest worked out from them.</summary>
     static readonly string[] Keys =

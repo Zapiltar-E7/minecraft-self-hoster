@@ -26,10 +26,10 @@
 - **Modpacks.** Drop in a Modrinth `.mrpack` or a CurseForge zip, and the exact loader, mods and configs are installed. Client-only mods are switched off for you.
 - **Plugins and mods.** See which ones work on your version, update them from Modrinth or CurseForge, switch them on and off, and drag new ones onto the window.
 - **Config editor.** Every setting in a readable grid with its description, for YAML, properties, JSON, HOCON and TOML. Comments and formatting are kept, and every save is backed up.
-- **Looking after it.** Automatic world backups, scheduled restarts with in-game warnings, crash recovery, TPS and memory graphs, and a live console.
+- **Looking after it.** Automatic world backups, scheduled restarts with in-game warnings, crash recovery, TPS and memory graphs, a live console, and a disk space view that clears out what can go.
 - **Web maps and voice chat.** BlueMap, Dynmap, Simple Voice Chat, Geyser and others show up on the Connections page with what they need.
 - **Several servers.** Switch between them, duplicate one, or move a whole server to another PC as a single file.
-- **Your look.** 75 menu colours and 24 highlight colours.
+- **Your look.** 75 menu colours, and 24 highlight colours or any colour you pick.
 - **Updates itself** from this repository's releases (you can switch this off).
 
 ## Screenshots

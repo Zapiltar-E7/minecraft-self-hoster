@@ -11,6 +11,8 @@ public partial class MainWindow
 {
     void BtnDisk_Click(object sender, RoutedEventArgs e)
     {
+        // cancelled when the panel closes, not when a question (Delete?) covers it for a moment
+        var cts = new CancellationTokenSource();
         ShowOverlay(close =>
         {
             var panel = new StackPanel();
@@ -22,10 +24,9 @@ public partial class MainWindow
             panel.Children.Add(rows);
             panel.Children.Add(ButtonRow(new (string, Func<object?>, bool)[] { ("Close", () => null, false) }, close));
 
-            var cts = new CancellationTokenSource();
-            panel.Unloaded += (_, _) => cts.Cancel();
-            _ = Task.Run(() => DiskUsage.Measure(cts.Token), cts.Token).ContinueWith(t => Dispatcher.BeginInvoke(() =>
+            void Measure() => _ = Task.Run(() => DiskUsage.Measure(cts.Token), cts.Token).ContinueWith(t => Dispatcher.BeginInvoke(() =>
             {
+                rows.Children.Clear();
                 if (t.IsCanceled || t.IsFaulted) { status.Text = t.IsFaulted ? "Couldn't measure: " + t.Exception?.InnerException?.Message : ""; return; }
                 var report = t.Result;
                 status.Text = report.DriveFree >= 0
@@ -33,15 +34,46 @@ public partial class MainWindow
                     : $"{Paths.ServerName} uses {DiskUsage.Format(report.Total)}.";
                 if (report.DriveSize > 0) rows.Children.Add(Bar(1 - report.DriveFree / (double)report.DriveSize, "Track", 8, new Thickness(0, 0, 0, 14)));
                 var biggest = report.Items.Count > 0 ? report.Items[0].Bytes : 1;
-                foreach (var item in report.Items) rows.Children.Add(DiskRow(item, biggest));
+                foreach (var item in report.Items) rows.Children.Add(DiskRow(item, biggest, status, Measure));
                 Motion.FadeIn(rows);
             }));
+            Measure();
             return panel;
         }, 620);
+        cts.Cancel();
     }
 
-    FrameworkElement DiskRow(DiskUsage.Item item, long biggest)
+    FrameworkElement DiskRow(DiskUsage.Item item, long biggest, TextBlock status, Action remeasure)
     {
+        Button? delete = null;
+        if (item.Delete != null)
+        {
+            var stopped = _state == ServerState.Stopped && _busy == 0;
+            delete = IconButton("\uE74D", stopped ? "Delete" : "Stop the server first", async (_, _) =>
+            {
+                var warn = item.Delete.Length > 0;
+                if (Ask($"Delete {item.Name} ({DiskUsage.Format(item.Bytes)})?" + (warn ? "\n\n" + item.Delete : ""), "Delete",
+                        MessageBoxButton.YesNo, warn ? MessageBoxImage.Warning : MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+                status.Text = $"Deleting {item.Name}...";
+                try
+                {
+                    await Task.Run(() => DiskUsage.Delete(item.Path));
+                    Log.Host($"Deleted {item.Name} ({DiskUsage.Format(item.Bytes)}): {item.Path}");
+                }
+                catch (Exception ex)
+                {
+                    Log.Host($"Couldn't fully delete {item.Name}: {ex.Message}");
+                    Ask($"Couldn't delete all of {item.Name}: {ex.Message}", "Delete", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                remeasure();
+            });
+            delete.IsEnabled = stopped;
+            System.Windows.Automation.AutomationProperties.SetName(delete, "Delete " + item.Name);
+            ToolTipService.SetShowOnDisabled(delete, true);
+            delete.SetResourceReference(Control.ForegroundProperty, "Bad");
+            delete.VerticalAlignment = VerticalAlignment.Top;
+            delete.Margin = new Thickness(6, 0, 0, 0);
+        }
         var open = IconButton("", "Show in File Explorer", (_, _) =>
         {
             var arg = File.Exists(item.Path) ? $"/select,\"{item.Path}\"" : $"\"{item.Path}\"";
@@ -73,6 +105,9 @@ public partial class MainWindow
         text.Children.Add(Bar(item.Bytes / (double)Math.Max(1, biggest), "Accent", 5, new Thickness(0, 6, 0, 0)));
         var row = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };
         open.VerticalAlignment = VerticalAlignment.Top;
+        if (delete != null) row.Children.Add(delete);
+        else row.Children.Add(new FrameworkElement { Width = 38 });   // keeps the bars lined up with the rows that have one
+        DockPanel.SetDock(row.Children[^1], Dock.Right);
         row.Children.Add(open);
         row.Children.Add(text);
         return row;

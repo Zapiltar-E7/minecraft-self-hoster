@@ -9,7 +9,7 @@
     <RootNamespace>MinecraftHost</RootNamespace>
     <AssemblyName>MinecraftHost</AssemblyName>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Product>Minecraft Self-Hoster</Product>
 
     <!-- one self-contained exe: no .NET install needed on the PC -->

@@ -268,349 +268,260 @@
               </StackPanel>
             </DockPanel>
           </Border>
-          <Grid>
+          <!-- one column of groups, dealt by section (LayoutServerCards); ServerCol1 stays empty -->
+          <Grid MaxWidth="900" HorizontalAlignment="Left" Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="*"/>
-              <ColumnDefinition x:Name="ServerGap1" Width="12"/>
-              <ColumnDefinition x:Name="ServerCol1Width" Width="*"/>
+              <ColumnDefinition x:Name="ServerGap1" Width="0"/>
+              <ColumnDefinition x:Name="ServerCol1Width" Width="0"/>
             </Grid.ColumnDefinitions>
             <StackPanel x:Name="ServerCol0">
-                <!-- whitelist -->
-                <Border x:Name="WhitelistCard" Style="{StaticResource CardStyle}">
-                  <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="WHITELIST"/>
-                    <!-- players the whitelist turned away, with Add (MainWindow.Extras.cs) -->
-                    <StackPanel x:Name="RequestsPanel" Visibility="Collapsed"/>
-                    <CheckBox x:Name="ChkWhitelist" Style="{StaticResource Switch}" Content="Only players on the list can join" Margin="0,0,0,10"
-                              Checked="ChkWhitelist_Click" Unchecked="ChkWhitelist_Click"/>
-                    <WrapPanel x:Name="WhitelistPanel"/>
-                    <TextBlock x:Name="WhitelistEmpty" Text="No one yet." Foreground="{DynamicResource Muted}" Margin="0,0,0,8"/>
-                    <DockPanel>
-                      <Button DockPanel.Dock="Right" Margin="8,0,0,0" Padding="14,6" FontWeight="Normal" Tag="Whitelist" Click="BtnPlayerAdd_Click">
-                        <StackPanel Orientation="Horizontal">
-                          <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE710;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-                          <TextBlock Text="Add"/>
-                        </StackPanel>
-                      </Button>
-                      <Grid>
-                        <TextBox x:Name="TxtWhitelistAdd" Style="{StaticResource Input}" KeyDown="TxtPlayerAdd_KeyDown" Tag="{Binding ElementName=TxtWhitelistAddHint}" TextChanged="HintedBox_TextChanged"/>
-                        <TextBlock x:Name="TxtWhitelistAddHint" Text="Player name" Foreground="{DynamicResource Muted}" Margin="10,0,0,0"
-                                   VerticalAlignment="Center" IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
-                      </Grid>
-                    </DockPanel>
-                  </StackPanel>
-                </Border>
-                <!-- operators -->
-                <Border x:Name="OpsCard" Style="{StaticResource CardStyle}">
-                  <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="OPERATORS"/>
-                    <WrapPanel x:Name="OpsPanel"/>
-                    <TextBlock x:Name="OpsEmpty" Text="No one yet." Foreground="{DynamicResource Muted}" Margin="0,0,0,8"/>
-                    <DockPanel>
-                      <Button DockPanel.Dock="Right" Margin="8,0,0,0" Padding="14,6" FontWeight="Normal" Tag="Ops" Click="BtnPlayerAdd_Click">
-                        <StackPanel Orientation="Horizontal">
-                          <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE710;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-                          <TextBlock Text="Add"/>
-                        </StackPanel>
-                      </Button>
-                      <Grid>
-                        <TextBox x:Name="TxtOpsAdd" Style="{StaticResource Input}" KeyDown="TxtPlayerAdd_KeyDown" Tag="{Binding ElementName=TxtOpsAddHint}" TextChanged="HintedBox_TextChanged"/>
-                        <TextBlock x:Name="TxtOpsAddHint" Text="Player name" Foreground="{DynamicResource Muted}" Margin="10,0,0,0"
-                                   VerticalAlignment="Center" IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
-                      </Grid>
-                    </DockPanel>
-                  </StackPanel>
-                </Border>
-                <!-- scheduled restarts -->
-                <Border x:Name="RestartCard" Style="{StaticResource CardStyle}">
-                  <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="RESTARTS"/>
-                    <CheckBox x:Name="ChkRestart" Style="{StaticResource Switch}" Margin="0" Checked="RestartSetting_Changed" Unchecked="RestartSetting_Changed">
-                      <StackPanel>
-                        <TextBlock Text="Restart the server on a schedule"/>
-                      </StackPanel>
-                    </CheckBox>
-                    <StackPanel x:Name="RestartOptions" Margin="0,12,0,0">
-                      <Grid>
-                        <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="*"/>
-                          <ColumnDefinition Width="10"/>
-                          <ColumnDefinition Width="110"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel>
-                          <TextBlock Style="{StaticResource FieldLabel}" Text="How often" Margin="0,0,0,4"/>
-                          <ComboBox x:Name="CmbRestartEvery" SelectionChanged="RestartSetting_Changed"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                          <TextBlock x:Name="RestartAtLabel" Style="{StaticResource FieldLabel}" Text="At" Margin="0,0,0,4"/>
-                          <Grid>
-                            <TextBox x:Name="TxtRestartAt" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}"
-                                     LostKeyboardFocus="TxtRestartAt_LostFocus" KeyDown="TxtRestartAt_KeyDown"
-                                     Tag="{Binding ElementName=TxtRestartAtHint}" TextChanged="HintedBox_TextChanged"
-                                     ToolTip="24-hour time, for example 04:00 or 16:30"/>
-                            <TextBlock x:Name="TxtRestartAtHint" Text="04:00" Foreground="{DynamicResource Muted}" Margin="10,0,0,0"
-                                       VerticalAlignment="Center" IsHitTestVisible="False"/>
-                          </Grid>
-                        </StackPanel>
-                      </Grid>
-                      <CheckBox x:Name="ChkRestartWarn" Style="{StaticResource Switch}" Margin="0,12,0,0"
-                                Content="Warn players in chat (5 min, 1 min and 10 s before)"
-                                Checked="RestartSetting_Changed" Unchecked="RestartSetting_Changed"/>
-                      <TextBlock x:Name="RestartNext" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="2,10,0,0"/>
-                    </StackPanel>
-                    <Border Height="1" Background="{DynamicResource CardBorder}" Margin="-16,14,-16,14"/>
-                    <CheckBox x:Name="ChkCrashRestart" Style="{StaticResource Switch}" Margin="0" Checked="CrashRestart_Changed" Unchecked="CrashRestart_Changed">
-                      <StackPanel>
-                        <TextBlock Text="Start it again if it crashes"/>
-                        <TextBlock Text="Up to 3 times in 10 minutes." Foreground="{DynamicResource Muted}"
-                                   FontSize="11.5" TextWrapping="Wrap" Margin="0,1,0,0"/>
-                      </StackPanel>
-                    </CheckBox>
-                  </StackPanel>
-                </Border>
-                <!-- automatic backups (MainWindow.Backups.cs) -->
-                <Border x:Name="BackupCard" Style="{StaticResource CardStyle}">
-                  <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="BACKUPS"/>
-                    <CheckBox x:Name="ChkBackupAuto" Style="{StaticResource Switch}" Margin="0" Checked="BackupSetting_Changed" Unchecked="BackupSetting_Changed">
-                      <StackPanel>
-                        <TextBlock Text="Back up the worlds automatically"/>
-                        <TextBlock Text="Runs without stopping the server. Only old automatic backups are removed."
-                                   Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,1,0,0"/>
-                      </StackPanel>
-                    </CheckBox>
-                    <StackPanel x:Name="BackupOptions" Margin="0,12,0,0">
-                      <Grid>
-                        <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="*"/>
-                          <ColumnDefinition Width="10"/>
-                          <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel>
-                          <TextBlock Style="{StaticResource FieldLabel}" Text="How often" Margin="0,0,0,4"/>
-                          <ComboBox x:Name="CmbBackupEvery" SelectionChanged="BackupSetting_Changed"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                          <TextBlock Style="{StaticResource FieldLabel}" Text="Keep" Margin="0,0,0,4"/>
-                          <ComboBox x:Name="CmbBackupKeep" SelectionChanged="BackupSetting_Changed"/>
-                        </StackPanel>
-                      </Grid>
-                      <CheckBox x:Name="ChkBackupOnRestart" Style="{StaticResource Switch}" Margin="0,12,0,0"
-                                Content="Also back up at each scheduled restart" Checked="BackupSetting_Changed" Unchecked="BackupSetting_Changed"/>
-                    </StackPanel>
-                    <TextBlock x:Name="BackupStatus" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="2,10,0,0"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                      <Button x:Name="BtnBackupNow" Padding="12,6" FontWeight="Normal" Click="BtnBackupNow_Click">
-                        <StackPanel Orientation="Horizontal">
-                          <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE74E;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-                          <TextBlock Text="Back up now"/>
-                        </StackPanel>
-                      </Button>
-                      <Button Style="{StaticResource IconButton}" Content="&#xE838;" Margin="8,0,0,0" ToolTip="Open the backups folder" Click="BtnBackupFolder_Click"/>
-                    </StackPanel>
-                  </StackPanel>
-                </Border>
+<StackPanel x:Name="WhitelistCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="WHITELIST"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<StackPanel x:Name="RequestsPanel" Visibility="Collapsed" Margin="16,12,16,0"/>
+<local:SettingRow Icon="&#xE72E;" Title="Only players on the list can join">
+<CheckBox x:Name="ChkWhitelist" Style="{StaticResource RowSwitch}" Checked="ChkWhitelist_Click" Unchecked="ChkWhitelist_Click" AutomationProperties.Name="Only players on the list can join"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE716;" Title="On the list">
+<local:SettingRow.Hint><TextBlock x:Name="WhitelistEmpty" Text="No one yet."/></local:SettingRow.Hint>
+<local:SettingRow.Below><WrapPanel x:Name="WhitelistPanel"/></local:SettingRow.Below>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE8FA;" Title="Add a player">
+<StackPanel Orientation="Horizontal"><Grid Width="200">
+<TextBox x:Name="TxtWhitelistAdd" Style="{StaticResource Input}" KeyDown="TxtPlayerAdd_KeyDown" Tag="{Binding ElementName=TxtWhitelistAddHint}" TextChanged="HintedBox_TextChanged"/>
+<TextBlock x:Name="TxtWhitelistAddHint" Text="Player name" Foreground="{DynamicResource Muted}" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
+</Grid><Button Padding="12,6" FontWeight="Normal" Click="BtnPlayerAdd_Click" Tag="Whitelist" Margin="8,0,0,0">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE710;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Add"/></StackPanel>
+</Button></StackPanel>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="OpsCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="OPERATORS"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE7EF;" Title="Operators">
+<local:SettingRow.Hint><TextBlock x:Name="OpsEmpty" Text="No one yet."/></local:SettingRow.Hint>
+<local:SettingRow.Below><WrapPanel x:Name="OpsPanel"/></local:SettingRow.Below>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE8FA;" Title="Add an operator">
+<StackPanel Orientation="Horizontal"><Grid Width="200">
+<TextBox x:Name="TxtOpsAdd" Style="{StaticResource Input}" KeyDown="TxtPlayerAdd_KeyDown" Tag="{Binding ElementName=TxtOpsAddHint}" TextChanged="HintedBox_TextChanged"/>
+<TextBlock x:Name="TxtOpsAddHint" Text="Player name" Foreground="{DynamicResource Muted}" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
+</Grid><Button Padding="12,6" FontWeight="Normal" Click="BtnPlayerAdd_Click" Tag="Ops" Margin="8,0,0,0">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE710;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Add"/></StackPanel>
+</Button></StackPanel>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="RestartCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="RESTARTS"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE777;" Title="Restart on a schedule">
+<local:SettingRow.Hint><TextBlock x:Name="RestartNext" Text=""/></local:SettingRow.Hint>
+<CheckBox x:Name="ChkRestart" Style="{StaticResource RowSwitch}" Checked="RestartSetting_Changed" Unchecked="RestartSetting_Changed" AutomationProperties.Name="Restart on a schedule"/>
+</local:SettingRow>
+<StackPanel x:Name="RestartOptions"><local:SettingRow Icon="&#xE823;" Title="How often">
+<StackPanel Orientation="Horizontal">
+<ComboBox x:Name="CmbRestartEvery" Width="170" SelectionChanged="RestartSetting_Changed" AutomationProperties.Name="How often"/>
+<TextBlock x:Name="RestartAtLabel" Text="at" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="10,0,8,0"/><Grid Width="76">
+<TextBox x:Name="TxtRestartAt" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}" LostKeyboardFocus="TxtRestartAt_LostFocus" KeyDown="TxtRestartAt_KeyDown" ToolTip="24-hour time, for example 04:00 or 16:30" Tag="{Binding ElementName=TxtRestartAtHint}" TextChanged="HintedBox_TextChanged"/>
+<TextBlock x:Name="TxtRestartAtHint" Text="04:00" Foreground="{DynamicResource Muted}" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
+</Grid></StackPanel>
+</local:SettingRow><local:SettingRow Icon="&#xE8BD;" Title="Warn players in chat" Hint="5 min, 1 min and 10 s before">
+<CheckBox x:Name="ChkRestartWarn" Style="{StaticResource RowSwitch}" Checked="RestartSetting_Changed" Unchecked="RestartSetting_Changed" AutomationProperties.Name="Warn players in chat"/>
+</local:SettingRow></StackPanel>
+<local:SettingRow Icon="&#xE7BA;" Title="Start it again if it crashes" Hint="Up to 3 times in 10 minutes">
+<CheckBox x:Name="ChkCrashRestart" Style="{StaticResource RowSwitch}" Checked="CrashRestart_Changed" Unchecked="CrashRestart_Changed" AutomationProperties.Name="Start it again if it crashes"/>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="BackupCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="BACKUPS"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE8F7;" Title="Back up the worlds automatically" Hint="Without stopping the server">
+<CheckBox x:Name="ChkBackupAuto" Style="{StaticResource RowSwitch}" Checked="BackupSetting_Changed" Unchecked="BackupSetting_Changed" AutomationProperties.Name="Back up the worlds automatically"/>
+</local:SettingRow>
+<StackPanel x:Name="BackupOptions"><local:SettingRow Icon="&#xE823;" Title="How often">
+<ComboBox x:Name="CmbBackupEvery" Width="170" SelectionChanged="BackupSetting_Changed" AutomationProperties.Name="How often"/>
+</local:SettingRow><local:SettingRow Icon="&#xE81C;" Title="Keep" Hint="Older automatic backups are removed">
+<ComboBox x:Name="CmbBackupKeep" Width="170" SelectionChanged="BackupSetting_Changed" AutomationProperties.Name="Keep"/>
+</local:SettingRow><local:SettingRow Icon="&#xE777;" Title="Also back up at each scheduled restart">
+<CheckBox x:Name="ChkBackupOnRestart" Style="{StaticResource RowSwitch}" Checked="BackupSetting_Changed" Unchecked="BackupSetting_Changed" AutomationProperties.Name="Also back up at each scheduled restart"/>
+</local:SettingRow></StackPanel>
+<local:SettingRow Icon="&#xE74E;" Title="Backups">
+<local:SettingRow.Hint><TextBlock x:Name="BackupStatus" Text=""/></local:SettingRow.Hint>
+<StackPanel Orientation="Horizontal"><Button x:Name="BtnBackupNow" Padding="12,6" FontWeight="Normal" Click="BtnBackupNow_Click">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE74E;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Back up now"/></StackPanel>
+</Button><Button Style="{StaticResource IconButton}" Content="&#xE838;" Margin="8,0,0,0" ToolTip="Open the backups folder" Click="BtnBackupFolder_Click"/></StackPanel>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
             </StackPanel>
             <StackPanel x:Name="ServerCol1" Grid.Column="2">
-                          <!-- the last 7 days (MainWindow.Extras.cs, Core\Stats.cs) -->
-                <Border x:Name="WeekCard" Style="{StaticResource CardStyle}">
-                  <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="THIS WEEK"/>
-                    <UniformGrid x:Name="WeekTiles" Columns="4"/>
-                    <TextBlock x:Name="WeekNote" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,10,0,0"/>
-                  </StackPanel>
-                </Border>
-                <!-- players: online now and recently (MainWindow.Players.cs) -->
-                <Border x:Name="PlayersCard" Style="{StaticResource CardStyle}">
-                  <DockPanel>
-                    <DockPanel DockPanel.Dock="Top">
-                      <TextBlock x:Name="PlayerCount" DockPanel.Dock="Right" Foreground="{DynamicResource Muted}" FontSize="11"/>
-                      <TextBlock Style="{StaticResource CardTitle}" Text="PLAYERS"/>
-                    </DockPanel>
-                    <TextBlock x:Name="NoPlayers" DockPanel.Dock="Top" Text="The server isn't running." TextWrapping="Wrap" Foreground="{DynamicResource Muted}"/>
-                                <StackPanel x:Name="PlayersPanel" Margin="0,8,0,0"/>
-                  </DockPanel>
-                </Border>
-                <!-- server software, launch options and folder -->
-                <Border x:Name="SoftwareCard" Style="{StaticResource CardStyle}">
-                  <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="SOFTWARE"/>
-                    <Grid>
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="*"/>
-                      </Grid.ColumnDefinitions>
-                      <StackPanel>
-                        <TextBlock Style="{StaticResource FieldLabel}" Text="Type" Margin="0,0,0,4"/>
-                        <ComboBox x:Name="CmbEdition" SelectionChanged="CmbEdition_SelectionChanged"/>
-                      </StackPanel>
-                      <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource FieldLabel}" Text="Minecraft version" Margin="0,0,0,4"/>
-                        <ComboBox x:Name="CmbVersion" MaxDropDownHeight="320" SelectionChanged="CmbVersion_SelectionChanged"/>
-                      </StackPanel>
-                    </Grid>
-                    <TextBlock x:Name="SoftwareNote" Foreground="{DynamicResource WarnText}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed"/>
-                    <Button x:Name="BtnInstall" Style="{StaticResource AccentButton}" Margin="0,10,0,0" HorizontalAlignment="Left" Click="BtnInstall_Click">
-                      <StackPanel Orientation="Horizontal">
-                        <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE896;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-                        <TextBlock x:Name="InstallLabel" Text="Install"/>
-                      </StackPanel>
-                    </Button>
-                    <!-- the modpack route: a row like the Tools cards, so it reads as its own option rather than a second button -->
-                    <Button x:Name="BtnModpackSoftware" Style="{StaticResource ToolButton}" Margin="0,12,0,0" Click="BtnModpack_Click">
-                      <DockPanel>
-                        <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xE7B8;" FontSize="15" Width="30" Margin="0,2,0,0" VerticalAlignment="Top"/>
-                        <StackPanel>
-                          <TextBlock Text="Install a modpack" FontWeight="SemiBold"/>
-                          <TextBlock Text="From a Modrinth or CurseForge file."
-                                     Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,1,0,0"/>
-                        </StackPanel>
-                      </DockPanel>
-                    </Button>
-
-                  </StackPanel>
-                </Border>
-                <Border x:Name="MemoryCard" Style="{StaticResource CardStyle}">
-                  <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="MEMORY"/>
-                    <StackPanel Orientation="Horizontal">
-                      <Button x:Name="BtnRamDown" Style="{StaticResource IconButton}" Content="&#xE738;" Margin="0" ToolTip="Less RAM" Click="BtnRamDown_Click"/>
-                      <TextBlock x:Name="RamText" Width="64" TextAlignment="Center" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                      <Button x:Name="BtnRamUp" Style="{StaticResource IconButton}" Content="&#xE710;" Margin="0" ToolTip="More RAM" Click="BtnRamUp_Click"/>
-                      <TextBlock x:Name="RamNote" Foreground="{DynamicResource Muted}" FontSize="12" Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                    </StackPanel>
-
-                    <!-- advanced: hidden until opened, or while arguments are set -->
-                    <Button x:Name="BtnLaunchArgs" Margin="-6,12,0,0" Padding="6,4" HorizontalAlignment="Left" FontWeight="Normal"
-                            Background="Transparent" Foreground="{DynamicResource Muted}" Click="BtnLaunchArgs_Click">
-                      <StackPanel Orientation="Horizontal">
-                        <TextBlock x:Name="LaunchArgsChevron" FontFamily="{StaticResource Icons}" Text="&#xE76C;" FontSize="10" VerticalAlignment="Center" Margin="0,1,8,0"/>
-                        <TextBlock Text="Launch arguments (advanced)"/>
-                      </StackPanel>
-                    </Button>
-                    <StackPanel x:Name="LaunchArgsPanel" Visibility="Collapsed">
-                      <TextBlock Style="{StaticResource FieldLabel}" Text="Java arguments (go before -jar)" Margin="0,8,0,4"/>
-                      <Grid>
-                        <TextBox x:Name="TxtJavaArgs" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}" FontSize="12" LostKeyboardFocus="LaunchArgs_LostFocus" KeyDown="LaunchArgs_KeyDown" ToolTip="Extra options for Java, added after the app&apos;s own -Xms1G -Xmx (an -Xmx here wins over the RAM setting)" Tag="{Binding ElementName=TxtJavaArgsHint}" TextChanged="HintedBox_TextChanged"/>
-                        <TextBlock x:Name="TxtJavaArgsHint" Text="e.g. -XX:+UseG1GC" Foreground="{DynamicResource Muted}" Margin="10,0,0,0"
-                                   VerticalAlignment="Center" IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
-                      </Grid>
-                      <TextBlock Style="{StaticResource FieldLabel}" Text="Server arguments (go after nogui)" Margin="0,8,0,4"/>
-                      <Grid>
-                        <TextBox x:Name="TxtServerArgs" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}" FontSize="12" LostKeyboardFocus="LaunchArgs_LostFocus" KeyDown="LaunchArgs_KeyDown" ToolTip="Extra options for the Minecraft server itself" Tag="{Binding ElementName=TxtServerArgsHint}" TextChanged="HintedBox_TextChanged"/>
-                        <TextBlock x:Name="TxtServerArgsHint" Text="e.g. --forceUpgrade" Foreground="{DynamicResource Muted}" Margin="10,0,0,0"
-                                   VerticalAlignment="Center" IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
-                      </Grid>
-                    </StackPanel>
-                  </StackPanel>
-                </Border>
-                <Border x:Name="FolderCard" Style="{StaticResource CardStyle}">
-                  <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="SERVER FOLDER"/>
-                    <DockPanel>
-                      <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE838;" ToolTip="Open folder" Click="BtnFolder_Click"/>
-                      <TextBox x:Name="TxtFolder" Style="{StaticResource Value}"/>
-                    </DockPanel>
-                    <TextBlock x:Name="TxtJar" Foreground="{DynamicResource Muted}" FontSize="11.5" Margin="2,6,0,0"/>
-                    <Button x:Name="BtnChooseFolder" Margin="0,10,0,0" FontWeight="Normal" Click="BtnChooseFolder_Click">
-                      <StackPanel Orientation="Horizontal">
-                        <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE8DA;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-                        <TextBlock Text="Choose server folder..."/>
-                      </StackPanel>
-                    </Button>
-                  </StackPanel>
-                </Border>
-                <!-- the common server.properties settings and the server icon (MainWindow.World.cs) -->
-                <Border x:Name="ListingCard" Style="{StaticResource CardStyle}">
-                  <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="SERVER LIST"/>
-                    <TextBlock Text="Message of the day" FontWeight="SemiBold" FontSize="12.5" Margin="0,0,0,2"/>
-                    <TextBox x:Name="TxtMotd" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}" FontSize="12" AcceptsReturn="True" MaxLines="2"
-                             TextChanged="TxtMotd_TextChanged" LostKeyboardFocus="TxtMotd_LostFocus" AutomationProperties.Name="Message of the day"/>
-                    <WrapPanel x:Name="MotdTools" Margin="0,6,0,0"/>
-                    <!-- what players see: icon, name, MOTD -->
-                    <!-- always dark, like the game's server list: the MOTD colours are Minecraft's, not the theme's -->
-                    <Border Background="#FF1E1F22" CornerRadius="7" Padding="10,8" Margin="0,8,0,0">
-                      <DockPanel>
-                        <Image x:Name="MotdIcon" Width="40" Height="40" DockPanel.Dock="Left" Margin="0,0,10,0" VerticalAlignment="Top"
-                               RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                        <StackPanel>
-                          <TextBlock x:Name="MotdName" Foreground="White" FontWeight="SemiBold" FontFamily="{StaticResource Mono}" FontSize="12"/>
-                          <TextBlock x:Name="MotdPreview" FontFamily="{StaticResource Mono}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"/>
-                        </StackPanel>
-                      </DockPanel>
-                    </Border>
-
-                    <Border Height="1" Background="{DynamicResource CardBorder}" Margin="-16,16,-16,14"/>
-                    <TextBlock Text="Server icon" FontWeight="SemiBold" FontSize="12.5" Margin="0,0,0,2"/>
-                    <TextBlock Text="Any image, cropped to 64 × 64." Foreground="{DynamicResource Muted}" FontSize="11.5" Margin="0,0,0,8" TextWrapping="Wrap"/>
-                    <StackPanel Orientation="Horizontal">
-                      <Border Width="48" Height="48" CornerRadius="6" Background="{DynamicResource Field}" BorderBrush="{DynamicResource FieldBorder}" BorderThickness="1">
-                        <Image x:Name="IconPreview" Margin="4" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                      </Border>
-                      <Button x:Name="BtnIconChoose" Margin="12,0,0,0" Padding="12,6" FontWeight="Normal" VerticalAlignment="Center" Click="BtnIconChoose_Click">
-                        <StackPanel Orientation="Horizontal">
-                          <TextBlock FontFamily="{StaticResource Icons}" Text="&#xEB9F;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-                          <TextBlock Text="Choose image..."/>
-                        </StackPanel>
-                      </Button>
-                      <Button x:Name="BtnIconRemove" Style="{StaticResource IconButton}" Content="&#xE74D;" Margin="8,0,0,0" VerticalAlignment="Center"
-                              ToolTip="Remove the icon (a copy goes to backups)" Click="BtnIconRemove_Click"/>
-                    </StackPanel>
-                  </StackPanel>
-                </Border>
-                <Border x:Name="GameplayCard" Style="{StaticResource CardStyle}">
-                  <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="GAMEPLAY"/>
-                    <Grid>
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="*"/>
-                      </Grid.ColumnDefinitions>
-                      <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                      </Grid.RowDefinitions>
-                      <StackPanel>
-                        <TextBlock Style="{StaticResource FieldLabel}" Text="Difficulty" Margin="0,0,0,4"/>
-                        <ComboBox x:Name="CmbDifficulty" SelectionChanged="WorldSetting_Changed"/>
-                      </StackPanel>
-                      <StackPanel Grid.Column="2">
-                        <TextBlock Style="{StaticResource FieldLabel}" Text="Game mode for new players" Margin="0,0,0,4"/>
-                        <ComboBox x:Name="CmbGamemode" SelectionChanged="WorldSetting_Changed"/>
-                      </StackPanel>
-                      <StackPanel Grid.Row="1" Margin="0,10,0,0">
-                        <TextBlock Style="{StaticResource FieldLabel}" Text="Max players" Margin="0,0,0,4"/>
-                        <TextBox x:Name="TxtMaxPlayers" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}" LostKeyboardFocus="WorldNumber_LostFocus" KeyDown="WorldNumber_KeyDown"/>
-                      </StackPanel>
-                      <Grid Grid.Row="1" Grid.Column="2" Margin="0,10,0,0">
-                        <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="*"/>
-                          <ColumnDefinition Width="8"/>
-                          <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel ToolTip="How far players see, in chunks (2-32)">
-                          <TextBlock Style="{StaticResource FieldLabel}" Text="View" Margin="0,0,0,4"/>
-                          <TextBox x:Name="TxtViewDistance" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}" LostKeyboardFocus="WorldNumber_LostFocus" KeyDown="WorldNumber_KeyDown"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2" ToolTip="How far from players the world keeps running (crops, mobs), in chunks (2-32)">
-                          <TextBlock Style="{StaticResource FieldLabel}" Text="Simulation" Margin="0,0,0,4"/>
-                          <TextBox x:Name="TxtSimDistance" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}" LostKeyboardFocus="WorldNumber_LostFocus" KeyDown="WorldNumber_KeyDown"/>
-                        </StackPanel>
-                      </Grid>
-                    </Grid>
-                    <CheckBox x:Name="ChkPvp" Style="{StaticResource Switch}" Margin="0,12,0,0" Content="Players can hurt each other (PVP)" Checked="WorldSetting_Changed" Unchecked="WorldSetting_Changed"/>
-                    <CheckBox x:Name="ChkFlight" Style="{StaticResource Switch}" Margin="0,8,0,0" Checked="WorldSetting_Changed" Unchecked="WorldSetting_Changed">
-                      <StackPanel>
-                        <TextBlock Text="Allow flight"/>
-                      </StackPanel>
-                    </CheckBox>
-                    <TextBlock x:Name="WorldNote" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="2,10,0,0"/>
-
-                  </StackPanel>
-                </Border>
+<StackPanel x:Name="WeekCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="THIS WEEK"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<StackPanel Margin="16,14,16,14">
+<UniformGrid x:Name="WeekTiles" Columns="4"/>
+<TextBlock x:Name="WeekNote" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,10,0,0"/>
+</StackPanel>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="PlayersCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="PLAYERS"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<DockPanel Margin="8,10,8,8">
+<TextBlock x:Name="PlayerCount" DockPanel.Dock="Top" Foreground="{DynamicResource Muted}" FontSize="11" Margin="8,0,8,0" Visibility="Collapsed"/>
+<TextBlock x:Name="NoPlayers" DockPanel.Dock="Top" Text="The server isn't running." TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="8,2,8,4"/>
+<StackPanel x:Name="PlayersPanel"/>
+</DockPanel>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="SoftwareCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="SOFTWARE"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE7F4;" Title="Server type">
+<local:SettingRow.Below><TextBlock x:Name="SoftwareNote" Foreground="{DynamicResource WarnText}" FontSize="12" TextWrapping="Wrap" Visibility="Collapsed"/></local:SettingRow.Below>
+<StackPanel Orientation="Horizontal">
+<ComboBox x:Name="CmbEdition" Width="150" SelectionChanged="CmbEdition_SelectionChanged" AutomationProperties.Name="Type"/>
+<ComboBox x:Name="CmbVersion" Width="110" Margin="8,0,0,0" MaxDropDownHeight="320" SelectionChanged="CmbVersion_SelectionChanged" AutomationProperties.Name="Minecraft version"/>
+</StackPanel>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE896;" Title="Server files" Hint="Installs or updates the type and version above">
+<Button x:Name="BtnInstall" Style="{StaticResource AccentButton}" Click="BtnInstall_Click">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE896;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock x:Name="InstallLabel" Text="Install"/></StackPanel>
+</Button>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE7B8;" Title="Modpack" Hint="From a Modrinth or CurseForge file">
+<Button x:Name="BtnModpackSoftware" Padding="12,6" FontWeight="Normal" Click="BtnModpack_Click">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE7B8;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Install a modpack"/></StackPanel>
+</Button>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="MemoryCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="MEMORY"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE950;" Title="Memory">
+<local:SettingRow.Hint><TextBlock x:Name="RamNote" Text=""/></local:SettingRow.Hint>
+<StackPanel Orientation="Horizontal">
+<Button x:Name="BtnRamDown" Style="{StaticResource IconButton}" Content="&#xE738;" Margin="0" ToolTip="Less RAM" Click="BtnRamDown_Click"/>
+<TextBlock x:Name="RamText" Width="60" TextAlignment="Center" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+<Button x:Name="BtnRamUp" Style="{StaticResource IconButton}" Content="&#xE710;" Margin="0" ToolTip="More RAM" Click="BtnRamUp_Click"/>
+</StackPanel>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE756;" Title="Launch arguments" Hint="Advanced">
+<Button x:Name="BtnLaunchArgs" Style="{StaticResource IconButton}" Margin="0" Click="BtnLaunchArgs_Click" ToolTip="Show or hide">
+<TextBlock x:Name="LaunchArgsChevron" FontFamily="{StaticResource Icons}" Text="&#xE76C;" FontSize="11"/>
+</Button>
+</local:SettingRow>
+<StackPanel x:Name="LaunchArgsPanel" Visibility="Collapsed" Margin="62,0,16,14">
+<TextBlock Style="{StaticResource FieldLabel}" Text="Java arguments (go before -jar)" Margin="0,0,0,4"/><Grid>
+<TextBox x:Name="TxtJavaArgs" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}" FontSize="12" LostKeyboardFocus="LaunchArgs_LostFocus" KeyDown="LaunchArgs_KeyDown" ToolTip="Extra options for Java (an -Xmx here wins over the RAM setting)" Tag="{Binding ElementName=TxtJavaArgsHint}" TextChanged="HintedBox_TextChanged"/>
+<TextBlock x:Name="TxtJavaArgsHint" Text="e.g. -XX:+UseG1GC" Foreground="{DynamicResource Muted}" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
+</Grid><TextBlock Style="{StaticResource FieldLabel}" Text="Server arguments (go after nogui)" Margin="0,10,0,4"/><Grid>
+<TextBox x:Name="TxtServerArgs" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}" FontSize="12" LostKeyboardFocus="LaunchArgs_LostFocus" KeyDown="LaunchArgs_KeyDown" ToolTip="Extra options for the Minecraft server itself" Tag="{Binding ElementName=TxtServerArgsHint}" TextChanged="HintedBox_TextChanged"/>
+<TextBlock x:Name="TxtServerArgsHint" Text="e.g. --forceUpgrade" Foreground="{DynamicResource Muted}" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
+</Grid></StackPanel>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="FolderCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="FOLDER"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE8B7;" Title="Server folder">
+<local:SettingRow.Hint><TextBlock x:Name="TxtJar" Text=""/></local:SettingRow.Hint>
+<StackPanel Orientation="Horizontal">
+<TextBox x:Name="TxtFolder" Style="{StaticResource Value}" Width="260"/>
+<Button Style="{StaticResource IconButton}" Content="&#xE838;" Margin="8,0,0,0" ToolTip="Open folder" Click="BtnFolder_Click"/>
+</StackPanel>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE8DA;" Title="Use another folder" Hint="Any folder with a server, of any type">
+<Button x:Name="BtnChooseFolder" Padding="12,6" FontWeight="Normal" Click="BtnChooseFolder_Click">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE8DA;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Choose..."/></StackPanel>
+</Button>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="ListingCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="SERVER LIST"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE8BD;" Title="Message of the day" Hint="Under the server name in the multiplayer list">
+<local:SettingRow.Below><StackPanel>
+<TextBox x:Name="TxtMotd" Style="{StaticResource Input}" FontFamily="{StaticResource Mono}" FontSize="12" AcceptsReturn="True" MaxLines="2"
+         TextChanged="TxtMotd_TextChanged" LostKeyboardFocus="TxtMotd_LostFocus" AutomationProperties.Name="Message of the day"/>
+<WrapPanel x:Name="MotdTools" Margin="0,6,0,0"/>
+<Border Background="#FF1E1F22" CornerRadius="7" Padding="10,8" Margin="0,8,0,0">
+<DockPanel>
+<Image x:Name="MotdIcon" Width="40" Height="40" DockPanel.Dock="Left" Margin="0,0,10,0" VerticalAlignment="Top" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+<StackPanel>
+<TextBlock x:Name="MotdName" Foreground="White" FontWeight="SemiBold" FontFamily="{StaticResource Mono}" FontSize="12"/>
+<TextBlock x:Name="MotdPreview" FontFamily="{StaticResource Mono}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"/>
+</StackPanel>
+</DockPanel>
+</Border>
+</StackPanel></local:SettingRow.Below>
+</local:SettingRow>
+<local:SettingRow Icon="&#xEB9F;" Title="Server icon" Hint="Any image, cropped to 64 × 64">
+<StackPanel Orientation="Horizontal">
+<Border Width="34" Height="34" CornerRadius="6" Background="{DynamicResource Field}" BorderBrush="{DynamicResource FieldBorder}" BorderThickness="1">
+<Image x:Name="IconPreview" Margin="3" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+</Border><Button x:Name="BtnIconChoose" Padding="12,6" FontWeight="Normal" Click="BtnIconChoose_Click" Margin="10,0,0,0" VerticalAlignment="Center">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xEB9F;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Choose image..."/></StackPanel>
+</Button><Button x:Name="BtnIconRemove" Style="{StaticResource IconButton}" Content="&#xE74D;" Margin="8,0,0,0" VerticalAlignment="Center" ToolTip="Remove the icon (a copy goes to backups)" Click="BtnIconRemove_Click"/>
+</StackPanel>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="GameplayCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="GAMEPLAY"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE9E9;" Title="Difficulty">
+<ComboBox x:Name="CmbDifficulty" Width="170" SelectionChanged="WorldSetting_Changed" AutomationProperties.Name="Difficulty"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE7FC;" Title="Game mode for new players">
+<ComboBox x:Name="CmbGamemode" Width="170" SelectionChanged="WorldSetting_Changed" AutomationProperties.Name="Game mode for new players"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE716;" Title="Max players">
+<TextBox x:Name="TxtMaxPlayers" Style="{StaticResource Input}" Width="80" FontFamily="{StaticResource Mono}" LostKeyboardFocus="WorldNumber_LostFocus" KeyDown="WorldNumber_KeyDown" AutomationProperties.Name="Max players"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE7B3;" Title="View distance" Hint="Chunks players can see (2-32)">
+<TextBox x:Name="TxtViewDistance" Style="{StaticResource Input}" Width="80" FontFamily="{StaticResource Mono}" LostKeyboardFocus="WorldNumber_LostFocus" KeyDown="WorldNumber_KeyDown" AutomationProperties.Name="View distance"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE9F5;" Title="Simulation distance" Hint="Chunks that keep running around players (2-32)">
+<TextBox x:Name="TxtSimDistance" Style="{StaticResource Input}" Width="80" FontFamily="{StaticResource Mono}" LostKeyboardFocus="WorldNumber_LostFocus" KeyDown="WorldNumber_KeyDown" AutomationProperties.Name="Simulation distance"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE7EE;" Title="Players can hurt each other" Hint="PVP">
+<CheckBox x:Name="ChkPvp" Style="{StaticResource RowSwitch}" Checked="WorldSetting_Changed" Unchecked="WorldSetting_Changed" AutomationProperties.Name="Players can hurt each other (PVP)"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE709;" Title="Allow flight" Hint="Stops kicks for flying with mods">
+<CheckBox x:Name="ChkFlight" Style="{StaticResource RowSwitch}" Checked="WorldSetting_Changed" Unchecked="WorldSetting_Changed" AutomationProperties.Name="Allow flight"/>
+</local:SettingRow>
+</StackPanel>
+</Border>
+<TextBlock x:Name="WorldNote" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="4,8,0,0"/>
+</StackPanel>
             </StackPanel>
           </Grid>
         </StackPanel>
@@ -669,7 +580,7 @@
       </Border>
 
       <!-- file list -->
-      <Border Grid.Row="1" Style="{StaticResource PaneStyle}" BorderThickness="0,0,1,0" Padding="0,0,14,8">
+      <Border Grid.Row="1" Style="{StaticResource PaneStyle}" Margin="0,0,0,8">
         <DockPanel>
           <TextBlock x:Name="ConfigListTitle" DockPanel.Dock="Top" Style="{StaticResource CardTitle}" Text="SERVER FILES" Margin="4,0,0,10"/>
           <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
@@ -709,7 +620,7 @@
       </Border>
 
       <!-- editor -->
-      <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource PaneStyle}" Margin="4,0,0,8">
+      <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource PaneStyle}" Margin="12,0,0,8">
         <DockPanel>
           <DockPanel DockPanel.Dock="Top" Margin="16,12,12,8">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -868,7 +779,7 @@
     </Grid>
 
     <!-- ================= PLUGINS & DATAPACKS TAB ================= -->
-    <Border x:Name="AddonsPage" Grid.Row="3" Style="{StaticResource PaneStyle}" Padding="0,0,0,8" Visibility="Collapsed">
+    <Border x:Name="AddonsPage" Grid.Row="3" Style="{StaticResource PaneStyle}" Margin="0,0,0,8" Visibility="Collapsed">
       <DockPanel>
         <TextBlock x:Name="AddonsTitle" DockPanel.Dock="Top" Style="{StaticResource CardTitle}" Text="PLUGINS &amp; DATAPACKS" Margin="2,0,0,10"/>
         <!-- toolbar -->
@@ -1007,188 +918,124 @@
     </Border>
 
     <!-- ================= TOOLS TAB ================= -->
-    <ScrollViewer x:Name="ToolsPage" Grid.Row="3" Visibility="Collapsed" SizeChanged="ToolsPage_SizeChanged" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="12"/>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition x:Name="ToolsGap2" Width="12"/>
-          <ColumnDefinition x:Name="ToolsCol2Width" Width="*"/>
-        </Grid.ColumnDefinitions>
-        <StackPanel x:Name="ToolsCol0">
-            <Border x:Name="ToolsPcCard" Style="{StaticResource CardStyle}">
-              <StackPanel>
-                <TextBlock Style="{StaticResource CardTitle}" Text="THIS PC"/>
-                <Button x:Name="BtnRequirements" Style="{StaticResource ToolButton}" Click="BtnRequirements_Click">
-                  <DockPanel>
-                    <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xE9F5;" FontSize="15" Width="30" Margin="0,2,0,0" VerticalAlignment="Top"/>
-                    <StackPanel>
-                      <TextBlock Text="Set up this PC" FontWeight="SemiBold"/>
-                      <TextBlock Text="Java, playit.gg and Cloudflare." Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,1,0,0"/>
-                    </StackPanel>
-                  </DockPanel>
-                </Button>
-                <Button x:Name="BtnLink" Style="{StaticResource ToolButton}" Margin="0" Click="BtnLink_Click">
-                  <DockPanel>
-                    <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xE71B;" FontSize="15" Width="30" Margin="0,2,0,0" VerticalAlignment="Top"/>
-                    <StackPanel>
-                      <TextBlock Text="Link playit.gg account" FontWeight="SemiBold"/>
-                      <TextBlock Text="Lets friends join without port forwarding." Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,1,0,0"/>
-                    </StackPanel>
-                  </DockPanel>
-                </Button>
-              </StackPanel>
-            </Border>
-        </StackPanel>
-        <StackPanel x:Name="ToolsCol1" Grid.Column="2">
-            <Border x:Name="ToolsServerCard" Style="{StaticResource CardStyle}">
-              <StackPanel>
-                <TextBlock Style="{StaticResource CardTitle}" Text="SERVER"/>
-                <Button x:Name="BtnDisk" Style="{StaticResource ToolButton}" Margin="0" Click="BtnDisk_Click">
-                  <DockPanel>
-                    <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xEDA2;" FontSize="15" Width="30" Margin="0,2,0,0" VerticalAlignment="Top"/>
-                    <StackPanel>
-                      <TextBlock Text="Disk space" FontWeight="SemiBold"/>
-                    </StackPanel>
-                  </DockPanel>
-                </Button>
-              </StackPanel>
-            </Border>
-        </StackPanel>
-        <StackPanel x:Name="ToolsCol2" Grid.Column="4">
-            <Border x:Name="ToolsMoveCard" Style="{StaticResource CardStyle}">
-              <StackPanel>
-                <TextBlock Style="{StaticResource CardTitle}" Text="MOVE TO ANOTHER PC"/>
-                <Button x:Name="BtnExport" Style="{StaticResource ToolButton}" Click="BtnExport_Click">
-                  <DockPanel>
-                    <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xEDE1;" FontSize="15" Width="30" Margin="0,2,0,0" VerticalAlignment="Top"/>
-                    <StackPanel>
-                      <TextBlock Text="Export server" FontWeight="SemiBold"/>
-                      <TextBlock Text="Move this server to another PC." Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,1,0,0"/>
-                    </StackPanel>
-                  </DockPanel>
-                </Button>
-                <Button x:Name="BtnImport" Style="{StaticResource ToolButton}" Margin="0" Click="BtnImport_Click">
-                  <DockPanel>
-                    <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xE8B5;" FontSize="15" Width="30" Margin="0,2,0,0" VerticalAlignment="Top"/>
-                    <StackPanel>
-                      <TextBlock Text="Import server" FontWeight="SemiBold"/>
-                      <TextBlock Text="From a file exported on another PC." Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,1,0,0"/>
-                    </StackPanel>
-                  </DockPanel>
-                </Button>
-              </StackPanel>
-            </Border>
-        </StackPanel>
-      </Grid>
+    <ScrollViewer x:Name="ToolsPage" Grid.Row="3" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+      <StackPanel MaxWidth="900" HorizontalAlignment="Left" Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+<StackPanel x:Name="ToolsPcCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="THIS PC"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE9F5;" Title="Set up this PC" Hint="Java, playit.gg and Cloudflare">
+<Button x:Name="BtnRequirements" Padding="12,6" FontWeight="Normal" Click="BtnRequirements_Click">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE9F5;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Check"/></StackPanel>
+</Button>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE71B;" Title="Link playit.gg account" Hint="Lets friends join without port forwarding">
+<Button x:Name="BtnLink" Padding="12,6" FontWeight="Normal" Click="BtnLink_Click">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE71B;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Link"/></StackPanel>
+</Button>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="ToolsServerCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="SERVER"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xEDA2;" Title="Disk space" Hint="What's using room, largest first">
+<Button x:Name="BtnDisk" Padding="12,6" FontWeight="Normal" Click="BtnDisk_Click">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xEDA2;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Show"/></StackPanel>
+</Button>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="ToolsMoveCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="MOVE TO ANOTHER PC"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xEDE1;" Title="Export server" Hint="Worlds, plugins and settings in one file">
+<Button x:Name="BtnExport" Padding="12,6" FontWeight="Normal" Click="BtnExport_Click">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xEDE1;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Export..."/></StackPanel>
+</Button>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE8B5;" Title="Import server" Hint="From a file exported on another PC">
+<Button x:Name="BtnImport" Padding="12,6" FontWeight="Normal" Click="BtnImport_Click">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE8B5;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Import..."/></StackPanel>
+</Button>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+      </StackPanel>
     </ScrollViewer>
 
     <!-- ================= SETTINGS TAB ================= -->
-    <!-- Startup and Sounds side by side (put there by SettingsPage_SizeChanged), Appearance across the width below -->
-    <ScrollViewer x:Name="SettingsPage" Grid.Row="3" Visibility="Collapsed" SizeChanged="SettingsPage_SizeChanged" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="28"/>
-          <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto"/>
-          <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <StackPanel x:Name="SettingsCol0"/>
-        <StackPanel x:Name="SettingsCol1" Grid.Column="2"/>
-        <Border x:Name="StartupCard" Style="{StaticResource CardStyle}">
-          <StackPanel>
-            <TextBlock Style="{StaticResource CardTitle}" Text="STARTUP"/>
-            <CheckBox x:Name="ChkOpenAtLogin" Style="{StaticResource Switch}" Margin="0" Checked="ChkOpenAtLogin_Click" Unchecked="ChkOpenAtLogin_Click">
-              <StackPanel>
-                <TextBlock Text="Open when Windows starts"/>
-                <TextBlock x:Name="OpenAtLoginNote" Foreground="{DynamicResource WarnText}" FontSize="11.5" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="Collapsed"/>
-              </StackPanel>
-            </CheckBox>
-            <Border Height="1" Background="{DynamicResource CardBorder}" Margin="-16,14,-16,14"/>
-            <CheckBox x:Name="ChkAutoStart" Style="{StaticResource Switch}" Margin="0" Checked="ChkAutoStart_Click" Unchecked="ChkAutoStart_Click">
-              <StackPanel>
-                <TextBlock Text="Start the server when the app opens"/>
-              </StackPanel>
-            </CheckBox>
-            <Border Height="1" Background="{DynamicResource CardBorder}" Margin="-16,14,-16,14"/>
-            <CheckBox x:Name="ChkTray" Style="{StaticResource Switch}" Margin="0" Checked="ChkTray_Click" Unchecked="ChkTray_Click">
-              <StackPanel>
-                <TextBlock Text="Minimize to the system tray"/>
-              </StackPanel>
-            </CheckBox>
-            <Border Height="1" Background="{DynamicResource CardBorder}" Margin="-16,14,-16,14"/>
-            <DockPanel>
-              <Button x:Name="BtnRestartUpdate" DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Padding="12,5" VerticalAlignment="Center"
-                      Visibility="Collapsed" Click="BtnRestartUpdate_Click" Content="Restart"/>
-              <CheckBox x:Name="ChkAutoUpdate" Style="{StaticResource Switch}" Margin="0" Checked="ChkAutoUpdate_Click" Unchecked="ChkAutoUpdate_Click">
-                <StackPanel>
-                  <TextBlock Text="Update automatically"/>
-                  <TextBlock x:Name="UpdateNote" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="0,1,0,0"/>
-                </StackPanel>
-              </CheckBox>
-            </DockPanel>
-          </StackPanel>
-        </Border>
-        <Border x:Name="SoundsCard" Style="{StaticResource CardStyle}">
-          <StackPanel>
-            <TextBlock Style="{StaticResource CardTitle}" Text="NOTIFICATIONS"/>
-            <CheckBox x:Name="ChkNotifyPlayers" Style="{StaticResource Switch}" Margin="0,0,0,14" Checked="ChkNotifyPlayers_Click" Unchecked="ChkNotifyPlayers_Click">
-              <StackPanel>
-                <TextBlock Text="Tell me when players join or leave"/>
-              </StackPanel>
-            </CheckBox>
-            <CheckBox x:Name="ChkSounds" Style="{StaticResource Switch}" Margin="0" Checked="ChkSounds_Click" Unchecked="ChkSounds_Click">
-              <StackPanel>
-                <TextBlock Text="Play sounds"/>
-              </StackPanel>
-            </CheckBox>
-          </StackPanel>
-        </Border>
-        <!-- across the full width below the others: room for the colour tiles -->
-        <Border x:Name="LookCard" Grid.Row="1" Grid.ColumnSpan="3" Style="{StaticResource CardStyle}">
-          <StackPanel>
-            <TextBlock Style="{StaticResource CardTitle}" Text="APPEARANCE"/>
-            <Grid>
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="28"/>
-                <ColumnDefinition Width="300"/>
-              </Grid.ColumnDefinitions>
-              <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                  <TextBlock Style="{StaticResource FieldLabel}" Text="Highlight colour" Margin="0"/>
-                  <TextBlock x:Name="HighlightName" Foreground="{DynamicResource Muted}" Margin="8,0,0,0" VerticalAlignment="Bottom"/>
-                </StackPanel>
-                <!-- the open page, buttons, switches and links; Auto is the menu colour's own -->
-                <ListBox x:Name="HighlightList" Style="{StaticResource PickerList}" ItemContainerStyle="{StaticResource LookSwatch}"
-                         SelectionChanged="HighlightList_SelectionChanged" AutomationProperties.Name="Highlight colour">
+    <ScrollViewer x:Name="SettingsPage" Grid.Row="3" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+      <StackPanel MaxWidth="900" HorizontalAlignment="Left" Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+<StackPanel x:Name="StartupCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="STARTUP"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE7E8;" Title="Open when Windows starts">
+<local:SettingRow.Hint><TextBlock x:Name="OpenAtLoginNote" Foreground="{DynamicResource WarnText}" Visibility="Collapsed"/></local:SettingRow.Hint>
+<CheckBox x:Name="ChkOpenAtLogin" Style="{StaticResource RowSwitch}" Checked="ChkOpenAtLogin_Click" Unchecked="ChkOpenAtLogin_Click" AutomationProperties.Name="Open when Windows starts"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE768;" Title="Start the server when the app opens">
+<CheckBox x:Name="ChkAutoStart" Style="{StaticResource RowSwitch}" Checked="ChkAutoStart_Click" Unchecked="ChkAutoStart_Click" AutomationProperties.Name="Start the server when the app opens"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE921;" Title="Minimize to the system tray">
+<CheckBox x:Name="ChkTray" Style="{StaticResource RowSwitch}" Checked="ChkTray_Click" Unchecked="ChkTray_Click" AutomationProperties.Name="Minimize to the system tray"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE895;" Title="Update automatically">
+<local:SettingRow.Hint><TextBlock x:Name="UpdateNote" Text=""/></local:SettingRow.Hint>
+<StackPanel Orientation="Horizontal">
+<Button x:Name="BtnRestartUpdate" Style="{StaticResource AccentButton}" Padding="12,5" Margin="0,0,14,0" Visibility="Collapsed" Click="BtnRestartUpdate_Click" Content="Restart"/>
+<CheckBox x:Name="ChkAutoUpdate" Style="{StaticResource RowSwitch}" Checked="ChkAutoUpdate_Click" Unchecked="ChkAutoUpdate_Click" AutomationProperties.Name="Update automatically"/>
+</StackPanel>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="SoundsCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="NOTIFICATIONS"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE7E7;" Title="Tell me when players join or leave">
+<CheckBox x:Name="ChkNotifyPlayers" Style="{StaticResource RowSwitch}" Checked="ChkNotifyPlayers_Click" Unchecked="ChkNotifyPlayers_Click" AutomationProperties.Name="Tell me when players join or leave"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE767;" Title="Play sounds">
+<CheckBox x:Name="ChkSounds" Style="{StaticResource RowSwitch}" Checked="ChkSounds_Click" Unchecked="ChkSounds_Click" AutomationProperties.Name="Play sounds"/>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+<StackPanel x:Name="LookCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="APPEARANCE"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel>
+<local:SettingRow Icon="&#xE790;" Title="Highlight colour">
+<local:SettingRow.Hint><TextBlock x:Name="HighlightName" Text=""/></local:SettingRow.Hint>
+<local:SettingRow.Below><ListBox x:Name="HighlightList" Margin="-5,0,0,0" Style="{StaticResource PickerList}" ItemContainerStyle="{StaticResource LookSwatch}"
+                         SelectionChanged="HighlightList_SelectionChanged" PreviewMouseLeftButtonUp="HighlightList_PreviewMouseLeftButtonUp" AutomationProperties.Name="Highlight colour">
                   <ListBox.ItemTemplate>
                     <DataTemplate>
                       <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="22" Height="22" Fill="{Binding Color}"/>
+                        <Grid>
+                          <Ellipse Width="22" Height="22" Fill="{Binding Color}"/>
+                          <TextBlock Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="11" Foreground="White" Visibility="{Binding Plus}"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
                         <TextBlock Text="Auto" Visibility="{Binding Auto}" FontSize="12.5" Margin="7,0,6,1" VerticalAlignment="Center"/>
                       </StackPanel>
                     </DataTemplate>
                   </ListBox.ItemTemplate>
-                </ListBox>
-              </StackPanel>
-              <CheckBox x:Name="ChkAnimations" Grid.Column="2" Style="{StaticResource Switch}" Margin="0,2,0,0" VerticalAlignment="Top"
-                        Checked="ChkAnimations_Click" Unchecked="ChkAnimations_Click">
-                <StackPanel>
-                  <TextBlock Text="Animations"/>
-                </StackPanel>
-              </CheckBox>
-            </Grid>
-            <Border Height="1" Background="{DynamicResource CardBorder}" Margin="0,16,0,16"/>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-              <TextBlock Style="{StaticResource FieldLabel}" Text="Menu colour" Margin="0"/>
-            </StackPanel>
-            <!-- a little window in each theme's colours, with the highlight picked above -->
-            <ListBox x:Name="ThemeList" Style="{StaticResource PickerList}" ItemContainerStyle="{StaticResource LookTile}"
+                </ListBox></local:SettingRow.Below>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE7C5;" Title="Animations">
+<CheckBox x:Name="ChkAnimations" Style="{StaticResource RowSwitch}" Checked="ChkAnimations_Click" Unchecked="ChkAnimations_Click" AutomationProperties.Name="Animations"/>
+</local:SettingRow>
+<local:SettingRow Icon="&#xE771;" Title="Menu colour" Hint="The background, sidebar and text">
+<local:SettingRow.Below><ListBox x:Name="ThemeList" Margin="-5,0,0,0" Style="{StaticResource PickerList}" ItemContainerStyle="{StaticResource LookTile}"
                      SelectionChanged="ThemeList_SelectionChanged" AutomationProperties.Name="Menu colour">
               <ListBox.GroupStyle>
                 <GroupStyle>
@@ -1230,10 +1077,12 @@
                   </StackPanel>
                 </DataTemplate>
               </ListBox.ItemTemplate>
-            </ListBox>
-          </StackPanel>
-        </Border>
-      </Grid>
+            </ListBox></local:SettingRow.Below>
+</local:SettingRow>
+</StackPanel>
+</Border>
+</StackPanel>
+      </StackPanel>
     </ScrollViewer>
 
     <!-- ================= CONNECTIONS TAB ================= -->
@@ -1245,16 +1094,16 @@
         <ColumnDefinition Width="12"/>
         <ColumnDefinition Width="*"/>
       </Grid.ColumnDefinitions>
-      <Border Style="{StaticResource PaneStyle}" BorderThickness="0,0,1,0" Padding="0,0,10,8">
+      <Border Style="{StaticResource PaneStyle}" Margin="0,0,0,8" Padding="8">
         <DockPanel>
                     <TextBlock x:Name="ConnListNote" DockPanel.Dock="Bottom" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="8,10,8,4"
                      Text="Voice chat, Bedrock and web map plugins show up here."/>
           <ListBox x:Name="ConnList" SelectionChanged="ConnList_SelectionChanged" AutomationProperties.Name="Connections"/>
         </DockPanel>
       </Border>
-      <Border Grid.Column="2" Style="{StaticResource PaneStyle}">
+      <Border Grid.Column="2" Style="{StaticResource PaneStyle}" Margin="0,0,0,8">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel x:Name="ConnDetail" Margin="24,0,20,18" MaxWidth="640" HorizontalAlignment="Left"/>
+          <StackPanel x:Name="ConnDetail" Margin="10,6,10,10" MaxWidth="640" HorizontalAlignment="Left"/>
         </ScrollViewer>
       </Border>
       <!-- the Minecraft connection's settings; moved into the right-hand pane when Minecraft is picked -->
@@ -1291,7 +1140,7 @@
         <RowDefinition Height="*"/>
       </Grid.RowDefinitions>
       <Grid x:Name="PerfRow"/>
-      <Border Grid.Row="1" Style="{StaticResource PaneStyle}" Margin="0,4,0,0">
+      <Border Grid.Row="1" Style="{StaticResource PaneStyle}" Margin="0,4,0,8">
         <DockPanel>
           <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
             <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE74D;" ToolTip="Clear the log" Click="BtnClear_Click"/>

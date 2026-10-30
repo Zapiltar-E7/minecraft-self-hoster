@@ -52,7 +52,7 @@ public partial class MainWindow
 
     Tile AddTile(int index, string title, string tip)
     {
-        if (index > 0) PerfRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+        if (index > 0) PerfRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
         PerfRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         var value = new TextBlock { FontSize = 20, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 2, 0, 0) };
@@ -67,7 +67,7 @@ public partial class MainWindow
         head.Children.Add(titleText);
         var card = new Border
         {
-            Style = (Style)FindResource("PaneStyle"), ToolTip = tip, Padding = new Thickness(0, 0, 0, 14),
+            Style = (Style)FindResource("PaneStyle"), ToolTip = tip, Padding = new Thickness(16, 12, 16, 14),
             Child = new StackPanel { Children = { head, value, note, graph } },
         };
         Grid.SetColumn(card, index * 2);
@@ -251,6 +251,8 @@ public partial class MainWindow
 
     static void Draw(Tile t)
     {
+        // no readings yet (the server is stopped): no empty graph space under the note
+        t.Graph.Visibility = t.Points.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         var w = t.Graph.ActualWidth;
         var h = t.Graph.ActualHeight;
         var points = new PointCollection();
