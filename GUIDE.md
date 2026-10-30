@@ -167,7 +167,7 @@ Then it installs the **exact** Minecraft version and mod loader build the pack n
 
 **On the old PC:** stop the server, then use **Tools → Export server**. A panel shows where the file will be saved (the last export folder, or the app's folder the first time), with **Change...** to pick another place, how much space that drive has, and what's included. Click **Export** to start. If the file won't fit on that drive, Export stays greyed out until you pick another. It saves one `.mchost` file containing:
 
-- **Worlds:** every dimension, including player inventories. They're packed about 40% smaller than a zip without losing anything: each region's chunks are unpacked and compressed together, and every chunk is checked when importing.
+- **Worlds:** every dimension, including player inventories. They're packed about a third smaller than a zip (on a 31 GB test server: worlds 35% smaller, the whole file 31%) without losing anything: each region's chunks are unpacked and compressed together, and every chunk is checked when importing.
 - **Plugins and datapacks,** including switched-off ones. Plugins Modrinth recognises are downloaded again on the new PC (checked against the original file's hash). Others are carried in the file.
 - **All config files and plugin data,** including CoreProtect's history, LuckPerms permissions and Essentials homes.
 - **This app's settings:** server version, RAM, public address, name and CurseForge key.
