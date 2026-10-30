@@ -2,7 +2,7 @@
   <img src="src/MinecraftHost/app.png" width="96" alt="">
 </p>
 
-<h1 align="center">Minecraft Server Host</h1>
+<h1 align="center">Minecraft Self-Hoster</h1>
 
 <p align="center">
   Run a Minecraft Java server on your own PC and let friends join, with or without port forwarding.<br>
@@ -42,7 +42,7 @@
 
 ## Getting started
 
-1. Download `MinecraftServerHost.exe` from the [latest release](https://github.com/Zapiltar-E7/minecraft-self-hoster/releases/latest) and put it in its own folder. The app keeps its files next to itself.
+1. Download `MinecraftSelfHoster.exe` from the [latest release](https://github.com/Zapiltar-E7/minecraft-self-hoster/releases/latest) and put it in its own folder. The app keeps its files next to itself.
 2. Run it. If something is missing, click **Set up this PC**. It downloads Java and, if you want them, the playit.gg and Cloudflare agents. Every download comes from the official source and is checked against its published checksum.
 3. Pick a server type and version on the **Server** page and click **Install**, or point the app at a server folder you already have.
 4. Click **Start**, then share the address from the **Connections** page with your friends.
@@ -58,7 +58,7 @@ cd src\MinecraftHost
 dotnet publish -c Release -o ..\publish
 ```
 
-The result is a single self-contained `MinecraftHost.exe` in `src\publish`. `src\build.bat` does the same and copies it next to the `src` folder as `Minecraft Host.exe`.
+The result is a single self-contained `MinecraftHost.exe` in `src\publish`. `src\build.bat` does the same and copies it next to the `src` folder as `Minecraft Self-Hoster.exe`.
 
 ## Releasing
 

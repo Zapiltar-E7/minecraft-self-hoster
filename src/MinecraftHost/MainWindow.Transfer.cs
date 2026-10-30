@@ -56,7 +56,7 @@ public partial class MainWindow
         Log.Host($"Exported {manifest.RegionFiles} region files, {manifest.Files} other files and {manifest.Downloads.Count} plugin links: {GB(size)}.");
         Sounds.Success();
         if (Ask($"Done: {Path.GetFileName(path)} ({GB(size)}).\n\n" +
-                $"On the new PC, put Minecraft Host.exe in a folder, start it and use Tools > Import server with this file. " +
+                $"On the new PC, put the Minecraft Self-Hoster app in a folder, start it and use Tools > Import server with this file. " +
                 $"{manifest.Downloads.Count} plugins are downloaded from Modrinth there, so it needs internet.\n\nShow the file?",
                 "Export server", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             Process.Start("explorer.exe", $"/select,\"{path}\"");

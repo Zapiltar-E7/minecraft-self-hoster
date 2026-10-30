@@ -10,7 +10,8 @@ public static class AppStartup
 {
     public const string Flag = "--startup";
     const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    const string ValueName = "Minecraft Server Host";
+    const string ValueName = "Minecraft Self-Hoster";
+    const string OldValueName = "Minecraft Server Host";   // before the rename: moved over by RefreshPath
 
     static string Command => $"\"{Environment.ProcessPath}\" {Flag}";
 
@@ -39,6 +40,11 @@ public static class AppStartup
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
+            if (key?.GetValue(OldValueName) is string old)
+            {
+                if (key.GetValue(ValueName) == null) key.SetValue(ValueName, old);
+                key.DeleteValue(OldValueName, throwOnMissingValue: false);
+            }
             if (key?.GetValue(ValueName) is not string current) return;
             var exe = current.StartsWith('"') ? current[1..current.IndexOf('"', 1)] : current.Split(' ')[0];
             if (!File.Exists(exe)) key.SetValue(ValueName, Command);

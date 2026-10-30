@@ -14,7 +14,7 @@ Friend's game  ->  playit.gg  ->  (outbound tunnel)  ->  playit agent on your PC
 
 ## The app
 
-Double-click **`Minecraft Host.exe`**. It's a single self-contained program, so you don't need to install .NET or anything else.
+Double-click **`Minecraft Self-Hoster.exe`**. It's a single self-contained program, so you don't need to install .NET or anything else.
 
 Keep the `.exe` in its folder. It keeps its own files next to itself: `tools` (Java, playit, cloudflared), `backups` and `host-config.json`. The server itself can be in any folder (see **Server folder** below).
 
@@ -178,13 +178,13 @@ It leaves out BlueMap's map data (it re-renders), logs, caches and Paper's downl
 
 **On the new PC:**
 
-1. Put `Minecraft Host.exe` in a folder and start it.
+1. Put `Minecraft Self-Hoster.exe` in a folder and start it.
 2. Use **Tools → Import server** and pick the file. The server goes into the `server` folder next to the app, or an empty folder you choose.
 3. **Set up this PC** installs Java, playit and Cloudflare.
 4. **Link playit.gg account** with the same playit account. Then check at playit.gg that your tunnel uses the new PC's agent, so friends keep the same address.
 ## Setting up a new PC
 
-Copy `Minecraft Host.exe` to the new PC and run it. If anything is missing, a yellow **This PC needs a few things first** banner appears. Click **Set up this PC** to see a checklist, then **Install missing**:
+Copy `Minecraft Self-Hoster.exe` to the new PC and run it. If anything is missing, a yellow **This PC needs a few things first** banner appears. Click **Set up this PC** to see a checklist, then **Install missing**:
 
 - **Java:** a portable Eclipse Temurin build goes into `tools\java`. It needs no admin rights and doesn't change the rest of the PC.
 - **playit.gg agent and cloudflared:** the official downloads go into `tools\`.

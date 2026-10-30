@@ -59,7 +59,7 @@ sealed class Tray : IDisposable
         {
             cbSize = Marshal.SizeOf<NotifyIconData>(), hWnd = hwnd, uID = 1,
             uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP, uCallbackMessage = WM_APP_TRAY, hIcon = _icon,
-            szTip = "Minecraft Server Host", szInfo = "", szInfoTitle = "",
+            szTip = "Minecraft Self-Hoster", szInfo = "", szInfoTitle = "",
         };
     }
 

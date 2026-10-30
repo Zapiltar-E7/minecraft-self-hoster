@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:MinecraftHost"
-        Title="Minecraft Server Host" Width="1180" Height="760" MinWidth="900" MinHeight="600"
+        Title="Minecraft Self-Hoster" Width="1180" Height="760" MinWidth="900" MinHeight="600"
         Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}" FontFamily="Segoe UI" FontSize="13"
         WindowStartupLocation="CenterScreen" Icon="app.ico" UseLayoutRounding="True"
         AllowDrop="True" DragEnter="Window_DragEnter" DragOver="Window_DragOver" DragLeave="Window_DragLeave" Drop="Window_Drop">
@@ -47,7 +47,7 @@
         </Rectangle>
       </Grid>
             <Grid Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
-              <TextBlock x:Name="TitleText" Text="Minecraft Server Host" FontSize="15" FontWeight="SemiBold" Background="Transparent" TextWrapping="Wrap"
+              <TextBlock x:Name="TitleText" Text="Minecraft Self-Hoster" FontSize="15" FontWeight="SemiBold" Background="Transparent" TextWrapping="Wrap"
                          Cursor="IBeam" ToolTip="Click to rename" MouseLeftButtonUp="TitleText_Click"/>
               <TextBox x:Name="TitleEdit" Style="{StaticResource Input}" FontSize="14" FontWeight="SemiBold" Margin="-9,-4,0,-4"
                        Visibility="Collapsed" KeyDown="TitleEdit_KeyDown" LostKeyboardFocus="TitleEdit_LostFocus"/>

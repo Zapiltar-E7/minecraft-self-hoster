@@ -80,7 +80,7 @@ public partial class MainWindow : Window
 
     // ------------------------------------------------------------ editable name
 
-    const string DefaultName = "Minecraft Server Host";
+    const string DefaultName = "Minecraft Self-Hoster";
 
     void TitleText_Click(object sender, MouseButtonEventArgs e)
     {

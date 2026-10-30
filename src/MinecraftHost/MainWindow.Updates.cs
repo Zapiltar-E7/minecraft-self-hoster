@@ -77,7 +77,7 @@ public partial class MainWindow
             return t;
         }
         var panel = new StackPanel();
-        panel.Children.Add(Heading("Minecraft Server Host", MessageBoxImage.None));
+        panel.Children.Add(Heading("Minecraft Self-Hoster", MessageBoxImage.None));
         panel.Children.Add(Line($"Version {Updater.CurrentText}" + (Updater.BuildDate != null ? $" · build {Updater.BuildDate}" : ""), "Muted", 2));
 
         var github = new Button { HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 14, 0, 0), Padding = new Thickness(12, 6, 12, 6), FontWeight = FontWeights.Normal };

@@ -133,7 +133,7 @@ public sealed class HostConfig
     public string? ServerDir { get; set; }
     /// <summary>Jar file inside the server folder; null means server.jar.</summary>
     public string? ServerJar { get; set; }
-    /// <summary>Name shown in the header and title bar; null means "Minecraft Server Host".</summary>
+    /// <summary>Name shown in the header and title bar; null means "Minecraft Self-Hoster".</summary>
     public string? Name { get; set; }
     /// <summary>The modpack this server was set up from ("name version"), or null.</summary>
     public string? Modpack { get; set; }
@@ -278,7 +278,7 @@ public static class Net
     static HttpClient CreateClient()
     {
         var http = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("minecraft-server-host/1.0");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("minecraft-self-hoster/1.0");
         return http;
     }
 
@@ -507,7 +507,7 @@ public static class ServerFiles
         File.ReadAllText(Path.Combine(Paths.ServerDir, "eula.txt")).Contains("eula=true", StringComparison.OrdinalIgnoreCase);
 
     public static void AcceptEula() =>
-        File.WriteAllText(Path.Combine(Paths.ServerDir, "eula.txt"), $"# Accepted via Minecraft Server Host on {DateTime.Now:s}\neula=true\n");
+        File.WriteAllText(Path.Combine(Paths.ServerDir, "eula.txt"), $"# Accepted via Minecraft Self-Hoster on {DateTime.Now:s}\neula=true\n");
 
     /// <summary>Zips every world folder (any folder with a level.dat) into backups\.</summary>
     public static string? BackupWorlds() => BackupWorlds(auto: false);

@@ -76,7 +76,7 @@ public static class DiscordTopic
     {
         var r = new HttpRequestMessage(method, url);
         r.Headers.Authorization = new AuthenticationHeaderValue("Bot", token);
-        r.Headers.Add("X-Audit-Log-Reason", "Minecraft Host: new web map link");
+        r.Headers.Add("X-Audit-Log-Reason", "Minecraft Self-Hoster: new web map link");
         return r;
     }
 
