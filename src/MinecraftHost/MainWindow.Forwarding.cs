@@ -8,7 +8,8 @@ namespace MinecraftHost;
 
 /// <summary>
 /// Port forwarding, for people who can set up their router: friends connect to the network's public IP, so no playit
-/// tunnel and no Cloudflare link is needed. Chosen per server on the Connections tab (Minecraft → Port forwarding).
+/// tunnel and no Cloudflare link is needed. Chosen per connection on the Connections tab (Minecraft for the game, and
+/// each plugin connection on its own card).
 /// </summary>
 public partial class MainWindow
 {

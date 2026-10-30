@@ -73,6 +73,7 @@ Closing the window while the server runs asks first, then stops the server safel
 How players and browsers reach your server. It updates itself from the plugins and mods you have switched on.
 
 - **Minecraft:** choose **playit.gg** or **Port forwarding**. With port forwarding, the card shows which port to forward to which local address, and friends join with your public IP (or a domain you enter). With playit.gg, **Let friends join** opens the tunnel when the server starts. **Friends join with** is the address to give friends, with Copy and a pencil to change it. **Open playit.gg tunnels** opens your tunnel list.
+- **Each connection chooses how it is reached:** the plugin cards have their own choice at the top, **playit.gg** or **Port forwarding**, plus a free **Cloudflare link** for web pages. So the game can go through playit.gg while the map uses port forwarding, or any other mix. A card you haven't set follows the Minecraft choice. With port forwarding, the card shows the port to forward and the address friends use.
 - **Web pages:** maps (BlueMap, Dynmap, squaremap, Pl3xMap) and Plan each get a card.
   - **Share with a link (Cloudflare)** gives friends a free browser link while the server runs (see below).
   - An optional **playit address (paid plan)** gives a link that stays the same, if you have playit Premium.

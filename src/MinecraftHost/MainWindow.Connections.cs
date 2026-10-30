@@ -37,7 +37,7 @@ public partial class MainWindow
             ? $"Forward TCP {ServerFiles.GetServerPort()} on your router to this PC ({Net.LocalIPv4() ?? "its local IP"})."
             : Playit.HasSecret ? "Linked to playit.gg." : "Not linked to playit.gg yet (Tools > Link playit.gg account).";
         BtnPlayitTunnels.Visibility = config.PortForward ? Visibility.Collapsed : Visibility.Visible;
-        if (config.PortForward && Net.PublicIPv4 == null) _ = FindPublicAddressAsync();
+        if (Net.PublicIPv4 == null && (config.PortForward || _services.Any(s => Method(config, s) == ViaForward))) _ = FindPublicAddressAsync();
         _connBuilding = true;
         JoinPlayit.IsChecked = !config.PortForward;
         JoinForward.IsChecked = config.PortForward;
@@ -130,12 +130,11 @@ public partial class MainWindow
 
     (string, string) ServiceStatus(DetectedService s, HostConfig c)
     {
-        if (c.PortForward) return _state == ServerState.Running ? ("Live", "Accent") : ("Ready", "Muted");
+        var method = Method(c, s);
+        if (method == ViaForward) return _state == ServerState.Running ? ("Live", "Accent") : ("Ready", "Muted");
+        if (method == ViaCloudflare)
+            return _webTunnels.ContainsKey(s.Id) ? ("Live", "Accent") : IsShared(c, s.Id) ? ("Ready", "Muted") : ("Off", "Idle");
         c.ServiceAddresses.TryGetValue(s.Id, out var address);
-        if (s.Def.Kind == ServiceKind.Web)
-            return _webTunnels.ContainsKey(s.Id) || (!string.IsNullOrEmpty(address) && _state == ServerState.Running) ? ("Live", "Accent")
-                : IsShared(c, s.Id) || !string.IsNullOrEmpty(address) ? ("Ready", "Muted")
-                : ("Off", "Idle");
         return string.IsNullOrEmpty(address) ? ("Needs setup", "Warn")
             : _state == ServerState.Running ? ("Live", "Accent")
             : ("Ready", "Muted");
@@ -165,7 +164,10 @@ public partial class MainWindow
     /// </summary>
     List<UIElement> ServiceParts(DetectedService s, HostConfig config)
     {
-        if (config.PortForward) return ForwardParts(s);
+        var method = Method(config, s);
+        var chosen = new List<UIElement> { MethodChips(s, method) };
+        if (method == ViaForward) { chosen.AddRange(ForwardParts(s)); return chosen; }
+        if (method == ViaCloudflare) { chosen.AddRange(CloudflareParts(s, config)); return chosen; }
         config.ServiceAddresses.TryGetValue(s.Id, out var address);
         var target = $"127.0.0.1:{s.Port}";
 
@@ -209,12 +211,11 @@ public partial class MainWindow
 
         var protocol = s.Def.Protocol == "UDP" ? "UDP" : "TCP";
         var help = web
-            ? $"Optional: a playit TCP tunnel to {target} (paid plan) gives a link that never changes."
+            ? $"A playit TCP tunnel to {target} (paid plan) gives a link that never changes."
             : $"Add a {protocol} tunnel to {target} in playit.gg and paste its address here." +
                    (s.Id == "voicechat" ? " Also sets Simple Voice Chat's voice_host." : "") +
                    (s.Id == "geyser" ? " Bedrock players join with it." : "");
-        var parts = new List<UIElement>();
-        if (web) parts.AddRange(CloudflareParts(s, config));
+        var parts = chosen;
         parts.Add(FieldLabel(web ? "playit address (paid plan)" : "Public address"));
         parts.Add(row);
         parts.Add(Muted(help, 8));
@@ -284,6 +285,58 @@ public partial class MainWindow
         return parts.ToArray();
     }
 
+    // ------------------------------------------------------------ how each connection is reached
+
+    const string ViaPlayit = "playit", ViaForward = "forward", ViaCloudflare = "cloudflare";
+
+    /// <summary>
+    /// How a plugin's connection is reached: its own choice, or else the Minecraft one (port forwarding, or playit.gg,
+    /// which for a web page means its free Cloudflare link).
+    /// </summary>
+    static string Method(HostConfig c, DetectedService s)
+    {
+        var web = s.Def.Kind == ServiceKind.Web;
+        if (c.ServiceMethods.TryGetValue(s.Id, out var m) && (m is ViaPlayit or ViaForward || m == ViaCloudflare && web)) return m;
+        return c.PortForward ? ViaForward : web ? ViaCloudflare : ViaPlayit;
+    }
+
+    /// <summary>The choice at the top of a connection's card: Cloudflare (web pages), playit.gg or port forwarding.</summary>
+    UIElement MethodChips(DetectedService s, string method)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(-2, 0, 0, 14) };
+        var choices = new List<(string Id, string Label, string Tip)>();
+        if (s.Def.Kind == ServiceKind.Web) choices.Add((ViaCloudflare, "Cloudflare link", "A free link that changes each time the server starts. No account or router setup."));
+        choices.Add((ViaPlayit, "playit.gg", s.Def.Kind == ServiceKind.Web ? "A playit TCP tunnel: a link that stays the same (paid plan)." : "A playit tunnel. Nothing to set up on your router."));
+        choices.Add((ViaForward, "Port forwarding", "You forward the port on your router. No playit.gg or Cloudflare needed."));
+        foreach (var (id, label, tip) in choices)
+        {
+            var chip = new RadioButton { Style = (Style)FindResource("FilterChip"), Content = label, ToolTip = tip, GroupName = "via-" + s.Id, IsChecked = id == method };
+            chip.Checked += (_, _) => SetMethod(s, id);   // after IsChecked is set, so building the card doesn't save anything
+            row.Children.Add(chip);
+        }
+        return row;
+    }
+
+    void SetMethod(DetectedService s, string method)
+    {
+        if (_connBuilding) return;
+        var config = HostConfig.LoadOrNew();
+        if (Method(config, s) == method) return;
+        config.ServiceMethods[s.Id] = method;
+        config.Save();
+        Log.Host($"{s.Def.Title}: reached through {(method == ViaForward ? "port forwarding" : method == ViaCloudflare ? "a Cloudflare link" : "playit.gg")}.");
+        // voice chat tells players where to connect: the playit address, or (port forwarding) the server's own address
+        if (s.Id == "voicechat")
+        {
+            config.ServiceAddresses.TryGetValue(s.Id, out var address);
+            var host = method == ViaPlayit ? address ?? "" : "";
+            if (Services.SetVoiceHost(s, host))
+                Log.Host($"Set voice_host={host} in Simple Voice Chat's settings" + (_state != ServerState.Stopped ? "; restart the server to use it." : "."));
+        }
+        // after the click has finished, since the card is rebuilt
+        Dispatcher.BeginInvoke(() => { RebuildConnections(); Motion.FadeIn(ConnDetail); }, System.Windows.Threading.DispatcherPriority.Background);
+    }
+
     static bool IsShared(HostConfig config, string id) => id == "bluemap" ? config.ShareMap : config.SharedWeb.Contains(id);
 
     void SaveServiceAddress(DetectedService s, string address)
@@ -319,8 +372,7 @@ public partial class MainWindow
     async Task StartWebTunnelsAsync()
     {
         var config = HostConfig.LoadOrNew();
-        if (config.PortForward) return;   // friends open the page through the router
-        var shared = _services.Where(s => s.Def.Kind == ServiceKind.Web && IsShared(config, s.Id)).ToList();
+        var shared = _services.Where(s => s.Def.Kind == ServiceKind.Web && Method(config, s) == ViaCloudflare && IsShared(config, s.Id)).ToList();
         if (shared.Count == 0) return;
         Cloudflared.StopStale();
         foreach (var s in shared)
