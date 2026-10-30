@@ -140,7 +140,7 @@ public partial class MainWindow
         if (result.ManualDownloads.Count > 0) lines.Add("Open their download pages now?");
         if (Ask(string.Join("\n\n", lines), "Modpack installed", buttons, clean ? MessageBoxImage.Information : MessageBoxImage.Warning) == MessageBoxResult.Yes)
             foreach (var (_, page) in result.ManualDownloads.Take(15))
-                try { Process.Start(new ProcessStartInfo(page) { UseShellExecute = true }); } catch { }
+                try { Playit.OpenUrl(page); } catch { }
         TabMods.IsChecked = true;
     }
 

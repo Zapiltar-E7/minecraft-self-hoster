@@ -95,7 +95,7 @@ At the bottom of the sidebar.
   - **Error tone:** a soft tone when one of those fails, or the server shuts down unexpectedly (a crash or a failed start, but not Stop, Force stop or an in-game `/stop`).
   - Switching it on plays the jingle once, so you can hear it.
 - **Start the server when the app opens:** same as clicking Start, including the playit tunnel and map sharing if they're on. It's skipped if something is already using the server's port.
-- **Update automatically** (on by default): checks this repository's releases at startup and every 6 hours. A newer build is downloaded, checked against its SHA-256, and used from the next start (or straight away with **Restart**).
+- **Check for updates** (on by default): looks at this repository's releases at startup and every 6 hours. When a newer version is out, a notice appears above the page with **Download and install** and **Later**. Nothing is installed until you click. The download must carry the developer's signature, or it's refused. It runs from the next start, or straight away with **Restart now**.
 
 ### Configs tab
 

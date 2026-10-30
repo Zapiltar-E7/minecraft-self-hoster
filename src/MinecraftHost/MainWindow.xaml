@@ -188,6 +188,18 @@
       <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
     <TextBlock x:Name="PageTitle" Text="Server" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
+    <!-- a newer version is out: offered here, installed only when asked (MainWindow.Updates.cs) -->
+    <Border x:Name="UpdateBanner" Grid.Row="1" Style="{StaticResource GroupPanel}" Padding="14,10" Margin="0,0,0,14" Visibility="Collapsed">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xE895;" Foreground="{DynamicResource Accent}" FontSize="15" VerticalAlignment="Center" Margin="0,1,12,0"/>
+        <Button DockPanel.Dock="Right" Padding="12,5" Margin="8,0,0,0" FontWeight="Normal" Content="Later" Click="BtnUpdateLater_Click"/>
+        <Button x:Name="BtnUpdateBanner" DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Padding="12,5" Margin="8,0,0,0" Click="BtnUpdateBanner_Click">
+          <TextBlock x:Name="UpdateBannerLabel" Text="Download and install"/>
+        </Button>
+        <Button DockPanel.Dock="Right" Padding="12,5" FontWeight="Normal" Background="Transparent" Foreground="{DynamicResource Accent}" Content="What&apos;s new" Click="BtnUpdateNotes_Click"/>
+        <TextBlock x:Name="UpdateBannerText" VerticalAlignment="Center" TextWrapping="Wrap"/>
+      </DockPanel>
+    </Border>
 
     <!-- ================= SERVER TAB ================= -->
     <!-- cards on the left (two columns, or one when narrow: ServerPage_SizeChanged), players online down the right -->
@@ -986,11 +998,12 @@
 <local:SettingRow Icon="&#xE921;" Title="Minimize to the system tray">
 <CheckBox x:Name="ChkTray" Style="{StaticResource RowSwitch}" Checked="ChkTray_Click" Unchecked="ChkTray_Click" AutomationProperties.Name="Minimize to the system tray"/>
 </local:SettingRow>
-<local:SettingRow Icon="&#xE895;" Title="Update automatically">
+<local:SettingRow Icon="&#xE895;" Title="Check for updates">
 <local:SettingRow.Hint><TextBlock x:Name="UpdateNote" Text=""/></local:SettingRow.Hint>
 <StackPanel Orientation="Horizontal">
+<Button x:Name="BtnInstallUpdate" Style="{StaticResource AccentButton}" Padding="12,5" Margin="0,0,14,0" Visibility="Collapsed" Click="BtnInstallUpdate_Click" Content="Download and install"/>
 <Button x:Name="BtnRestartUpdate" Style="{StaticResource AccentButton}" Padding="12,5" Margin="0,0,14,0" Visibility="Collapsed" Click="BtnRestartUpdate_Click" Content="Restart"/>
-<CheckBox x:Name="ChkAutoUpdate" Style="{StaticResource RowSwitch}" Checked="ChkAutoUpdate_Click" Unchecked="ChkAutoUpdate_Click" AutomationProperties.Name="Update automatically"/>
+<CheckBox x:Name="ChkAutoUpdate" Style="{StaticResource RowSwitch}" Checked="ChkAutoUpdate_Click" Unchecked="ChkAutoUpdate_Click" AutomationProperties.Name="Check for updates"/>
 </StackPanel>
 </local:SettingRow>
 </StackPanel>

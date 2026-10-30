@@ -97,8 +97,19 @@ public static class Playit
         return p;
     }
 
-    public static void OpenUrl(string url) =>
-        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    /// <summary>
+    /// Opens a web page in the browser. Only http and https addresses are opened: links come from plugin files and
+    /// online listings, and the shell would happily run a program or open a file given anything else.
+    /// </summary>
+    public static void OpenUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)
+        {
+            Log.Host($"Didn't open \"{url}\": it isn't a web address.");
+            return;
+        }
+        Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+    }
 }
 
 /// <summary>Cloudflare quick tunnels for web pages like the BlueMap map (no account needed). One process per page.</summary>

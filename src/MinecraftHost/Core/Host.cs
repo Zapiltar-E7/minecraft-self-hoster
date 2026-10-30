@@ -166,8 +166,8 @@ public sealed class HostConfig
     public string Theme { get; set; } = "Default";
     public string? Highlight { get; set; }
     public bool Animations { get; set; } = true;
-    /// <summary>Download newer builds from GitHub by itself (Settings → Startup).</summary>
-    public bool AutoUpdate { get; set; } = true;
+    /// <summary>Look for newer releases on GitHub and offer them (Settings → Startup). Nothing is installed without the user's click.</summary>
+    public bool CheckForUpdates { get; set; } = true;
     /// <summary>Minimizing hides the window to an icon in the system tray (next to the clock).</summary>
     public bool TrayOnMinimize { get; set; } = true;
     /// <summary>A tray notification when a player joins or leaves while the window is hidden.</summary>

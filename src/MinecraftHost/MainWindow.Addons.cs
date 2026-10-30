@@ -278,7 +278,7 @@ public partial class MainWindow
     void AddonWebsite_Click(object sender, RoutedEventArgs e)
     {
         if (((FrameworkElement)sender).DataContext is Addon a)
-            Process.Start(new ProcessStartInfo(a.WebUrl) { UseShellExecute = true });
+            Playit.OpenUrl(a.WebUrl);
     }
 
     // ------------------------------------------------------------ checking for updates
@@ -345,7 +345,7 @@ public partial class MainWindow
                 "1. Sign in at console.curseforge.com (it opens now).\n2. Open \"API keys\" and copy your key.\n3. Paste it in the next box.\n\n" +
                 "Modrinth needs no account, so its updates work without this.", "CurseForge", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
             return;
-        if (!hadKey) Process.Start(new ProcessStartInfo("https://console.curseforge.com/") { UseShellExecute = true });
+        if (!hadKey) Playit.OpenUrl("https://console.curseforge.com/");
 
         var value = Prompt("CurseForge API key", "Paste your CurseForge API key. It is saved in host-config.json next to the app. Leave empty to remove it.",
             config.CurseForgeKey ?? "");
@@ -425,7 +425,7 @@ public partial class MainWindow
                 $"Open the download page? Put the new file in the {(_modsMode ? "mods" : "plugins")} folder and switch the old one off.",
                 "Update", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             foreach (var a in websiteOnly.Where(a => a.Update?.PageUrl != null))
-                Process.Start(new ProcessStartInfo(a.Update!.PageUrl! + "/files") { UseShellExecute = true });
+                Playit.OpenUrl(a.Update!.PageUrl! + "/files");
         if (done > 0) Log.Host($"Updated {done} file(s). Start the server to use them.");
     }
 }

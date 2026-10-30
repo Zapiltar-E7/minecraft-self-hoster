@@ -30,7 +30,7 @@
 - **Web maps and voice chat.** BlueMap, Dynmap, Simple Voice Chat, Geyser and others show up on the Connections page with what they need.
 - **Several servers.** Switch between them, duplicate one, or move a whole server to another PC as a single file.
 - **Your look.** 75 menu colours, and 24 highlight colours or any colour you pick.
-- **Updates itself** from this repository's releases (you can switch this off).
+- **Safe updates.** It tells you when a new version is out and installs it only when you click, after checking the release is signed by the developer.
 
 ## Screenshots
 
@@ -62,7 +62,17 @@ The result is a single self-contained `MinecraftHost.exe` in `src\publish`. `src
 
 ## Releasing
 
-Bump `<Version>` in `src/MinecraftHost/MinecraftHost.csproj`, publish, and attach the exe to a GitHub release tagged `v<version>`. Installed copies with automatic updates on pick it up within a few hours.
+Releases are signed, and the app refuses an update whose signature doesn't match the public key built into it (`Updater.PublicKey`). The private key never goes in the repository.
+
+1. Bump `<Version>` in `src/MinecraftHost/MinecraftHost.csproj` and publish.
+2. Copy the exe to `MinecraftSelfHoster.exe` and sign it:
+   ```
+   dotnet run --project src\ReleaseSigner -- sign MinecraftSelfHoster.exe 1.0.4
+   ```
+   This writes `MinecraftSelfHoster.exe.sig` using the key in `%USERPROFILE%\.minecraft-self-hoster\release-key.pem`. `verify` checks a signed file the same way the app does.
+3. Create a GitHub release tagged `v1.0.4` with both files attached.
+
+Installed copies show the update the next time they check (if Check for updates is on), and install it when the user clicks Download and install.
 
 ## Credits
 

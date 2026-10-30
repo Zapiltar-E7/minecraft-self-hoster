@@ -7,19 +7,23 @@ using MinecraftHost.Core;
 namespace MinecraftHost;
 
 /// <summary>
-/// Settings → Update automatically: checks GitHub at startup and every 6 hours, and swaps a newer build in (Updater);
-/// it runs from the next start, or straight away with Restart. Also the Info panel (version, GitHub, credits).
+/// Updates, only when the user says so: with Settings → Check for updates on, GitHub is checked at startup and every
+/// 6 hours. A newer signed release shows a notice above the page (and in Settings) with Download and install; nothing is
+/// ever installed without that click. Installing checks the release's signature (Updater), and it runs from the next
+/// start, or straight away with Restart. Also the Info panel (version, GitHub, credits).
 /// </summary>
 public partial class MainWindow
 {
     readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromHours(6) };
-    bool _updateChecked, _updateFailed, _restartAfterClose;
+    bool _updateChecked, _updateFailed, _updateInstalling, _restartAfterClose;
+    Updater.Release? _updateAvailable;
+    Version? _updateDismissed;   // "Later": not shown again for this version until the app restarts
 
     void InitUpdates()
     {
         Updater.CleanUp();
-        ChkAutoUpdate.IsChecked = HostConfig.Load()?.AutoUpdate != false;
-        ShowUpdateNote();
+        ChkAutoUpdate.IsChecked = HostConfig.Load()?.CheckForUpdates != false;
+        ShowUpdate();
         _updateTimer.Tick += (_, _) => _ = CheckForUpdateAsync();
         _updateTimer.Start();
         Closed += (_, _) => { if (_restartAfterClose) Updater.StartNew(); };
@@ -28,34 +32,89 @@ public partial class MainWindow
 
     async Task CheckForUpdateAsync()
     {
-        if (HostConfig.Load()?.AutoUpdate == false || Updater.Staged != null) return;
+        if (HostConfig.Load()?.CheckForUpdates == false || Updater.Installed != null || _updateInstalling) return;
         UpdateNote.Text = "Checking for updates...";
         try
         {
-            var version = await Updater.UpdateAsync();
-            if (version != null) Log.Host($"Version {version.ToString(3)} downloaded. It starts the next time the app opens.");
+            var release = await Updater.CheckAsync();
+            if (release != null && release.Version != _updateAvailable?.Version) Log.Host($"Version {release.Version.ToString(3)} is available (Settings → Check for updates).");
+            _updateAvailable = release;
             _updateFailed = false;
         }
         catch { _updateFailed = true; }   // offline, or GitHub unreachable: try again later
         _updateChecked = true;
-        ShowUpdateNote();
+        ShowUpdate();
     }
 
-    void ShowUpdateNote()
+    /// <summary>The note in Settings, its buttons, and the notice above the page.</summary>
+    void ShowUpdate()
     {
-        var staged = Updater.Staged;
-        UpdateNote.Text = staged != null ? $"Version {staged.ToString(3)} is ready"
+        var installed = Updater.Installed;
+        var available = _updateAvailable;
+        UpdateNote.Text = installed != null ? $"Version {installed.ToString(3)} is installed. Restart to use it."
+            : _updateInstalling ? $"Downloading version {available!.Version.ToString(3)}..."
+            : available != null ? $"Version {available.Version.ToString(3)} is available (you have {Updater.CurrentText})"
             : $"Version {Updater.CurrentText}" + (_updateFailed ? " · couldn't check" : _updateChecked ? " · up to date" : "");
-        BtnRestartUpdate.Visibility = staged != null ? Visibility.Visible : Visibility.Collapsed;
+        BtnInstallUpdate.Visibility = available != null && installed == null && !_updateInstalling ? Visibility.Visible : Visibility.Collapsed;
+        BtnRestartUpdate.Visibility = installed != null ? Visibility.Visible : Visibility.Collapsed;
+
+        var show = installed != null && installed != _updateDismissed || _updateInstalling || installed == null && available != null && available.Version != _updateDismissed;
+        UpdateBannerText.Text = installed != null ? $"Version {installed.ToString(3)} is installed. Restart the app to use it."
+            : _updateInstalling ? $"Downloading version {available!.Version.ToString(3)} and checking its signature..."
+            : available != null ? $"Version {available.Version.ToString(3)} is available. You have {Updater.CurrentText}." : "";
+        UpdateBannerLabel.Text = installed != null ? "Restart now" : "Download and install";
+        BtnUpdateBanner.IsEnabled = !_updateInstalling;
+        var wasShown = UpdateBanner.Visibility == Visibility.Visible;
+        UpdateBanner.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (show && !wasShown) Motion.FadeIn(UpdateBanner);
     }
 
     void ChkAutoUpdate_Click(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
         var config = HostConfig.LoadOrNew();
-        config.AutoUpdate = ChkAutoUpdate.IsChecked == true;
+        config.CheckForUpdates = ChkAutoUpdate.IsChecked == true;
         config.Save();
-        if (config.AutoUpdate) _ = CheckForUpdateAsync();
+        if (config.CheckForUpdates) _ = CheckForUpdateAsync();
+        else { _updateAvailable = null; ShowUpdate(); }
+    }
+
+    void BtnUpdateBanner_Click(object sender, RoutedEventArgs e)
+    {
+        if (Updater.Installed != null) BtnRestartUpdate_Click(sender, e);
+        else _ = InstallUpdateAsync();
+    }
+
+    void BtnInstallUpdate_Click(object sender, RoutedEventArgs e) => _ = InstallUpdateAsync();
+
+    void BtnUpdateLater_Click(object sender, RoutedEventArgs e)
+    {
+        _updateDismissed = Updater.Installed ?? _updateAvailable?.Version;
+        UpdateBanner.Visibility = Visibility.Collapsed;
+    }
+
+    void BtnUpdateNotes_Click(object sender, RoutedEventArgs e) => Playit.OpenUrl(_updateAvailable?.PageUrl ?? Updater.RepoUrl + "/releases");
+
+    async Task InstallUpdateAsync()
+    {
+        if (_updateAvailable is not { } release || _updateInstalling) return;
+        _updateInstalling = true;
+        ShowUpdate();
+        try
+        {
+            await Updater.InstallAsync(release);
+            Log.Host($"Version {release.Version.ToString(3)} is installed (signature checked). It starts the next time the app opens.");
+        }
+        catch (Exception ex)
+        {
+            Log.Host("The update wasn't installed: " + ex.Message);
+            Ask("The update wasn't installed.\n\n" + ex.Message, "Update", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            _updateInstalling = false;
+            ShowUpdate();
+        }
     }
 
     /// <summary>Closes (stopping the server safely first, if it runs) and opens the new version.</summary>

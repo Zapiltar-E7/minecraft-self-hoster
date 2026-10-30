@@ -13,3 +13,7 @@ data/
 host-config.json
 map-link.txt
 *.exe
+
+# release signing keys never go in the repository
+*.pem
+*.key

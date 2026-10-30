@@ -1,17 +1,25 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace MinecraftHost.Core;
 
 /// <summary>
-/// Updates the app from its GitHub releases: the newest release's .exe is downloaded (checked against the SHA-256
-/// GitHub lists for it), then swapped in for the running exe. Windows lets a running exe be renamed but not
-/// overwritten, so the old one becomes "&lt;name&gt;.old.exe" and is deleted the next time the app starts.
+/// Updates from the app's GitHub releases, only when the user asks: <see cref="CheckAsync"/> finds a newer release,
+/// <see cref="InstallAsync"/> downloads it, checks its signature and swaps it in.
+/// A release is the exe plus "&lt;exe&gt;.sig", an ECDSA P-256 signature (made with src\ReleaseSigner) over the app's
+/// name, the version and the exe's SHA-256. Only the holder of the private key can make one that matches
+/// <see cref="PublicKey"/>, so a release someone else uploaded is refused. Windows lets a running exe be renamed but
+/// not overwritten, so the old one becomes "&lt;name&gt;.old.exe" and is deleted the next time the app starts.
 /// </summary>
 public static class Updater
 {
     public const string Repo = "Zapiltar-E7/minecraft-self-hoster";
     public const string RepoUrl = "https://github.com/" + Repo;
+
+    /// <summary>The release signing key's public half (SubjectPublicKeyInfo, base64). The private half never leaves the maintainer's PC.</summary>
+    const string PublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEC2nWDMKvczYZvjNNovHznakc78B6QAxt+srUtM8zLafwhSqeJ2+9E05BNYNrvdydOvlrQPpRYlfvPPdg3YyETA==";
 
     /// <summary>This build's version (the csproj's Version).</summary>
     public static Version Current { get; } = Normalize(Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0));
@@ -22,8 +30,8 @@ public static class Updater
 
     public static string CurrentText => Current.ToString(3);
 
-    /// <summary>A newer version already downloaded and swapped in, waiting for the app to restart.</summary>
-    public static Version? Staged { get; private set; }
+    /// <summary>A newer version already installed, waiting for the app to restart.</summary>
+    public static Version? Installed { get; private set; }
 
     static string ExePath => Environment.ProcessPath!;
     static string OldPath => Path.Combine(Path.GetDirectoryName(ExePath)!, Path.GetFileNameWithoutExtension(ExePath) + ".old.exe");
@@ -37,41 +45,51 @@ public static class Updater
         catch { }   // another copy of the app is still running from it
     }
 
-    public sealed record Release(Version Version, string Tag, string ExeUrl, string? Sha256);
+    public sealed record Release(Version Version, string Tag, string ExeUrl, string SigUrl, string PageUrl);
 
-    /// <summary>The newest release on GitHub with an .exe attached, or null if there's none.</summary>
-    public static async Task<Release?> LatestAsync(CancellationToken ct = default)
+    /// <summary>The newest release, if it's newer than this build and signed; otherwise null.</summary>
+    public static async Task<Release?> CheckAsync()
     {
         var json = await Net.GetJsonAsync($"https://api.github.com/repos/{Repo}/releases/latest");
         var tag = json["tag_name"]?.GetValue<string>();
-        if (tag == null || !Version.TryParse(tag.TrimStart('v', 'V'), out var version)) return null;
-        var asset = json["assets"]?.AsArray().FirstOrDefault(a => a?["name"]?.GetValue<string>().EndsWith(".exe", StringComparison.OrdinalIgnoreCase) == true);
-        var url = asset?["browser_download_url"]?.GetValue<string>();
-        if (url == null) return null;
-        var digest = asset!["digest"]?.GetValue<string>();   // "sha256:<hex>"
-        var sha = digest?.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) == true ? digest[7..] : null;
-        return new Release(Normalize(version), tag, url, sha);
+        if (tag == null || !Version.TryParse(tag.TrimStart('v', 'V'), out var version) || Normalize(version) <= Current) return null;
+        var assets = json["assets"]?.AsArray().Select(a => (Name: a?["name"]?.GetValue<string>() ?? "", Url: a?["browser_download_url"]?.GetValue<string>() ?? "")).ToList() ?? new();
+        var exe = assets.FirstOrDefault(a => a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+        var sig = assets.FirstOrDefault(a => a.Name.Equals(exe.Name + ".sig", StringComparison.OrdinalIgnoreCase));
+        if (exe.Url.Length == 0 || sig.Url.Length == 0) return null;   // unsigned releases are never offered
+        return new Release(Normalize(version), tag, exe.Url, sig.Url, json["html_url"]?.GetValue<string>() ?? RepoUrl + "/releases");
     }
 
     /// <summary>
-    /// Checks GitHub and, when there's a newer build, downloads it and swaps it in. Returns the version swapped in
-    /// (it runs from the next start), or null when this one is the newest.
+    /// Downloads a release, checks its signature, and swaps it in for the running exe (it runs from the next start).
+    /// Throws, leaving the app as it was, if the signature doesn't match.
     /// </summary>
-    public static async Task<Version?> UpdateAsync(CancellationToken ct = default)
+    public static async Task InstallAsync(Release release, CancellationToken ct = default)
     {
-        if (Staged != null) return Staged;
-        var latest = await LatestAsync(ct);
-        if (latest == null || latest.Version <= Current) return null;
-        if (latest.Sha256 == null) throw new InvalidOperationException($"Release {latest.Tag} has no checksum to verify the download with.");
-
         var download = ExePath + ".new";
-        await Net.DownloadAsync(latest.ExeUrl, download, "SHA256", latest.Sha256, ct, quiet: true);
-        if (File.Exists(OldPath)) File.Delete(OldPath);
-        File.Move(ExePath, OldPath);
-        try { File.Move(download, ExePath); }
-        catch { File.Move(OldPath, ExePath); throw; }   // put the running one back
-        Staged = latest.Version;
-        return Staged;
+        try
+        {
+            await Net.DownloadAsync(release.ExeUrl, download, ct: ct, quiet: true);
+            var signature = Convert.FromBase64String((await Net.Http.GetStringAsync(release.SigUrl, ct)).Trim());
+            if (!Verify(download, release.Version, signature))
+                throw new InvalidOperationException($"The download of version {release.Version.ToString(3)} isn't signed by this app's developer, so it wasn't installed.");
+            if (File.Exists(OldPath)) File.Delete(OldPath);
+            File.Move(ExePath, OldPath);
+            try { File.Move(download, ExePath); }
+            catch { File.Move(OldPath, ExePath); throw; }   // put the running one back
+            Installed = release.Version;
+        }
+        finally { try { if (File.Exists(download)) File.Delete(download); } catch { } }
+    }
+
+    static bool Verify(string exe, Version version, byte[] signature)
+    {
+        using var stream = File.OpenRead(exe);
+        var hash = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+        var message = Encoding.UTF8.GetBytes($"minecraft-self-hoster\n{version.ToString(3)}\n{hash}");
+        using var key = ECDsa.Create();
+        key.ImportSubjectPublicKeyInfo(Convert.FromBase64String(PublicKey), out _);
+        return key.VerifyData(message, signature, HashAlgorithmName.SHA256);
     }
 
     /// <summary>Starts the (updated) exe; the caller closes this one.</summary>
