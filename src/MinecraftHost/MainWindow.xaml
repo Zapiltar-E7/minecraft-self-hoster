@@ -1013,12 +1013,14 @@
 <local:SettingRow Icon="&#xE921;" Title="Minimize to the system tray">
 <CheckBox x:Name="ChkTray" Style="{StaticResource RowSwitch}" Checked="ChkTray_Click" Unchecked="ChkTray_Click" AutomationProperties.Name="Minimize to the system tray"/>
 </local:SettingRow>
-<local:SettingRow Icon="&#xE895;" Title="Check for updates">
+<local:SettingRow Icon="&#xE895;" Title="Updates">
 <local:SettingRow.Hint><TextBlock x:Name="UpdateNote" Text=""/></local:SettingRow.Hint>
 <StackPanel Orientation="Horizontal">
 <Button x:Name="BtnInstallUpdate" Style="{StaticResource AccentButton}" Padding="12,5" Margin="0,0,14,0" Visibility="Collapsed" Click="BtnInstallUpdate_Click" Content="Download and install"/>
 <Button x:Name="BtnRestartUpdate" Style="{StaticResource AccentButton}" Padding="12,5" Margin="0,0,14,0" Visibility="Collapsed" Click="BtnRestartUpdate_Click" Content="Restart"/>
-<CheckBox x:Name="ChkAutoUpdate" Style="{StaticResource RowSwitch}" Checked="ChkAutoUpdate_Click" Unchecked="ChkAutoUpdate_Click" AutomationProperties.Name="Check for updates"/>
+<Button x:Name="BtnCheckNow" Padding="12,5" FontWeight="Normal" Click="BtnCheckNow_Click" AutomationProperties.Name="Check for updates">
+<StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE72C;" VerticalAlignment="Center" Margin="0,1,8,0"/><TextBlock Text="Check now"/></StackPanel>
+</Button>
 </StackPanel>
 </local:SettingRow>
 </StackPanel>

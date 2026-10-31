@@ -28,7 +28,10 @@ public static class Updater
     public static string? BuildDate { get; } = Assembly.GetExecutingAssembly().GetCustomAttributes<AssemblyMetadataAttribute>()
         .FirstOrDefault(a => a.Key == "BuildDate")?.Value;
 
-    public static string CurrentText => Current.ToString(3);
+    public static string CurrentText => Text(Current);
+
+    /// <summary>"1.0.6", or "1.0.6.1" when there's a fourth number: also the version text a release's signature covers.</summary>
+    public static string Text(Version v) => v.Revision > 0 ? v.ToString(4) : v.ToString(3);
 
     /// <summary>A newer version already installed, waiting for the app to restart.</summary>
     public static Version? Installed { get; private set; }
@@ -36,7 +39,7 @@ public static class Updater
     static string ExePath => Environment.ProcessPath!;
     static string OldPath => Path.Combine(Path.GetDirectoryName(ExePath)!, Path.GetFileNameWithoutExtension(ExePath) + ".old.exe");
 
-    static Version Normalize(Version v) => new(v.Major, v.Minor, Math.Max(v.Build, 0));
+    static Version Normalize(Version v) => new(v.Major, v.Minor, Math.Max(v.Build, 0), Math.Max(v.Revision, 0));
 
     /// <summary>At startup: removes the exe an earlier update replaced.</summary>
     public static void CleanUp()
@@ -72,7 +75,7 @@ public static class Updater
             await Net.DownloadAsync(release.ExeUrl, download, ct: ct, quiet: true);
             var signature = Convert.FromBase64String((await Net.Http.GetStringAsync(release.SigUrl, ct)).Trim());
             if (!Verify(download, release.Version, signature))
-                throw new InvalidOperationException($"The download of version {release.Version.ToString(3)} isn't signed by this app's developer, so it wasn't installed.");
+                throw new InvalidOperationException($"The download of version {Text(release.Version)} isn't signed by this app's developer, so it wasn't installed.");
             if (File.Exists(OldPath)) File.Delete(OldPath);
             File.Move(ExePath, OldPath);
             try { File.Move(download, ExePath); }
@@ -86,7 +89,7 @@ public static class Updater
     {
         using var stream = File.OpenRead(exe);
         var hash = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
-        var message = Encoding.UTF8.GetBytes($"minecraft-self-hoster\n{version.ToString(3)}\n{hash}");
+        var message = Encoding.UTF8.GetBytes($"minecraft-self-hoster\n{Text(version)}\n{hash}");
         using var key = ECDsa.Create();
         key.ImportSubjectPublicKeyInfo(Convert.FromBase64String(PublicKey), out _);
         return key.VerifyData(message, signature, HashAlgorithmName.SHA256);
