@@ -52,6 +52,7 @@ Four sections along the top:
 - **Players:** who's online and who was on recently, this week's numbers, the whitelist and operators.
 - **World:** how the server looks in the multiplayer list (message of the day with colours, and the icon), and gameplay settings.
 - **Backups & restarts:** automatic backups, scheduled restarts with chat warnings, and restarting after a crash.
+- **Announcements:** messages the server posts in chat on a schedule, see **Announcements** below.
 
 ### Tools
 
@@ -145,6 +146,18 @@ Works exactly like the Plugins tab, for Fabric, Quilt, Forge and NeoForge mods i
 - **Old jars after an update:** go to `backups\mods\<date-time>\`.
 
 If the server type can't load mods (Paper, Vanilla) or plugins (Fabric, Quilt, Forge, NeoForge, Vanilla), a note on that tab says so. On the Configs tab, mod settings from the `config` folder show under **Mod configs**, or under the mod's own folder name.
+
+## Announcements
+
+**Server → Announcements** posts messages in chat on a schedule while the server runs.
+
+- **Each announcement** has its message, how often it goes out (every 5 minutes to every 6 hours), an on/off switch, and **Only when players are online**, so an empty server isn't announcing to nobody. The first one goes out one interval after the server starts.
+- **Placeholders**, inserted with the buttons under the message:
+  - `{map}` is the web map's link right now, as a clickable link in chat. It follows however the map is shared (Cloudflare link, playit.gg or port forwarding), so it's never out of date, even though a Cloudflare link changes every start. If the map has no link at that moment, the announcement waits for the next time instead of posting an old one.
+  - `{address}` is the address friends join with, and `{online}` is how many players are on.
+- **Colours:** `&` codes work, for example `&b` for aqua or `&e` for yellow.
+- **Live map link** adds `Live map: {map}` every 30 minutes in one click.
+- **Send now** posts it immediately, to see how it looks in game.
 
 ## Modpacks
 

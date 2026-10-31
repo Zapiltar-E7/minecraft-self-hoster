@@ -17,6 +17,7 @@ public partial class MainWindow
         ChkTray.IsChecked = HostConfig.Load()?.TrayOnMinimize != false;
         ChkNotifyPlayers.IsChecked = HostConfig.Load()?.NotifyPlayers != false;
         InitUpdates();
+        InitAnnouncements();
         _loading = false;
         UpdateStartupNote();
     }

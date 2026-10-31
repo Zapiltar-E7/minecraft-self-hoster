@@ -112,6 +112,8 @@ public partial class MainWindow
         Stats.Reset();
         _ = NamePlayersAsync();
         _recentNote = null;
+        _announceDue.Clear();   // each server has its own announcements
+        RebuildAnnouncements();
         CheckDiskSpace(force: true);
         _joinRequests.Clear();
         UpdateJoinRequests();

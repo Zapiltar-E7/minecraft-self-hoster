@@ -42,7 +42,7 @@ public partial class MainWindow : Window
         Themes.Changed += () => { DarkTitleBar.Apply(this); UpdateView(); RefreshThemedCards(); };
         // the open page's highlight and the open section's underline slide to the one picked
         Motion.Track(NavMarker, NavLayer, NavButtons, underline: false);
-        Motion.Track(SecMarker, SecLayer, new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep }, underline: true);
+        Motion.Track(SecMarker, SecLayer, new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep, SecAnnounce }, underline: true);
         Motion.Track(CfgMarker, CfgLayer, new[] { CfgServer, CfgPlugins, CfgDatapacks, CfgMods }, underline: true);
         _logTimer.Tick += (_, _) => DrainLog();
         _logTimer.Start();
@@ -221,19 +221,21 @@ public partial class MainWindow : Window
 
     void LayoutServerCards(bool animate)
     {
-        var section = SecPlayers.IsChecked == true ? SecPlayers : SecWorld.IsChecked == true ? SecWorld : SecUpkeep.IsChecked == true ? SecUpkeep : SecGeneral;
+        var section = SecPlayers.IsChecked == true ? SecPlayers : SecWorld.IsChecked == true ? SecWorld : SecUpkeep.IsChecked == true ? SecUpkeep
+            : SecAnnounce.IsChecked == true ? SecAnnounce : SecGeneral;
         var two = false;   // one column of panels (mockup B)
         if (two == _serverTwo && section == _serverLaidOut) return;
         var changed = section != _serverLaidOut;
-        var sections = new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep };
+        var sections = new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep, SecAnnounce };
         var dx = _serverLaidOut == null || Array.IndexOf(sections, section) > Array.IndexOf(sections, _serverLaidOut) ? 18 : -18;
         _serverTwo = two;
         _serverLaidOut = section;
         var (left, right) = section == SecPlayers ? (new FrameworkElement[] { PlayersCard, WeekCard }, new FrameworkElement[] { WhitelistCard, OpsCard })
             : section == SecWorld ? (new FrameworkElement[] { ListingCard }, new FrameworkElement[] { GameplayCard })
             : section == SecUpkeep ? (new FrameworkElement[] { RestartCard }, new FrameworkElement[] { BackupCard })
+            : section == SecAnnounce ? (new FrameworkElement[] { AnnounceCard }, Array.Empty<FrameworkElement>())
             : (new FrameworkElement[] { SoftwareCard }, new FrameworkElement[] { MemoryCard, FolderCard });
-        foreach (var card in new FrameworkElement[] { SoftwareCard, MemoryCard, FolderCard, PlayersCard, WeekCard, WhitelistCard, OpsCard, ListingCard, GameplayCard, RestartCard, BackupCard })
+        foreach (var card in new FrameworkElement[] { SoftwareCard, MemoryCard, FolderCard, PlayersCard, WeekCard, WhitelistCard, OpsCard, ListingCard, GameplayCard, RestartCard, BackupCard, AnnounceCard })
             (card.Parent as Panel)?.Children.Remove(card);
         foreach (var card in left) ServerCol0.Children.Add(card);
         foreach (var card in right) (two ? ServerCol1 : ServerCol0).Children.Add(card);

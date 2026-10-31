@@ -120,6 +120,8 @@ public partial class MainWindow
             new(() => WhitelistCard, "Whitelist",
                 "With the switch on, only the players listed can join. Type a name and press Add, or click Ã— to remove someone."),
             new(() => OpsCard, "Operators", "Players who can use admin commands in game."),
+            new(() => AnnounceCard, "Announcements",
+                "Messages the server posts in chat on a schedule. Put {map} in one and it's always the web map's current link, clickable."),
             new(() => RestartCard, "Restarts",
                 "Switch this on to restart the server by itself, once a day or every few hours from the time you choose. Players get a warning in chat first, and worlds are saved like with the Restart button."),
             new(() => Up(CmbEdition, 2), "Server type and version",

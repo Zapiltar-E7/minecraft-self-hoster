@@ -239,6 +239,12 @@
               <TextBlock Text="Backups &amp; restarts"/>
             </StackPanel>
           </RadioButton>
+          <RadioButton x:Name="SecAnnounce" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="Messages posted in chat on a schedule">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE789;" VerticalAlignment="Center" Margin="0,1,8,0"/>
+              <TextBlock Text="Announcements"/>
+            </StackPanel>
+          </RadioButton>
         </StackPanel>
           <Canvas x:Name="SecLayer" IsHitTestVisible="False">
             <Rectangle x:Name="SecMarker" Fill="{DynamicResource Accent}" Visibility="Hidden"/>
@@ -377,6 +383,15 @@
 </StackPanel>
 </Border>
 </StackPanel>
+            <!-- messages in chat on a schedule (MainWindow.Announcements.cs fills the rows) -->
+            <StackPanel x:Name="AnnounceCard" Style="{StaticResource Group}">
+              <TextBlock Style="{StaticResource GroupTitle}" Text="ANNOUNCEMENTS"/>
+              <Border Style="{StaticResource GroupPanel}">
+                <StackPanel x:Name="AnnounceRows"/>
+              </Border>
+              <TextBlock Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="4,8,0,0"
+                         Text="Sent while the server runs. {map} is always the current web map link, clickable in chat."/>
+            </StackPanel>
             </StackPanel>
             <StackPanel x:Name="ServerCol1" Grid.Column="2">
 <StackPanel x:Name="WeekCard" Style="{StaticResource Group}">

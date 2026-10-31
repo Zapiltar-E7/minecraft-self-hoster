@@ -108,6 +108,8 @@ public sealed class ServerProfile
     public Dictionary<string, string> ServiceAddresses { get; set; } = new();
     /// <summary>How each plugin connection is reached, by service id: "playit", "forward" or "cloudflare" (web pages). Unset follows the Minecraft choice.</summary>
     public Dictionary<string, string> ServiceMethods { get; set; } = new();
+    /// <summary>Messages posted in chat on a schedule (Server → Announcements).</summary>
+    public List<Announcement> Announcements { get; set; } = new();
     public List<string> SeenServices { get; set; } = new();
 
     /// <summary>The folder it runs from (null ServerDir is the "server" folder next to the app).</summary>
@@ -182,6 +184,8 @@ public sealed class HostConfig
     public Dictionary<string, string> ServiceAddresses { get; set; } = new();
     /// <summary>How each plugin connection is reached, by service id: "playit", "forward" or "cloudflare" (web pages). Unset follows the Minecraft choice.</summary>
     public Dictionary<string, string> ServiceMethods { get; set; } = new();
+    /// <summary>Messages posted in chat on a schedule (Server → Announcements).</summary>
+    public List<Announcement> Announcements { get; set; } = new();
     /// <summary>Service ids already shown on the Connections tab (newer ones put a dot on the tab).</summary>
     public List<string> SeenServices { get; set; } = new();
     /// <summary>Folder the last export was saved to; the next export starts there.</summary>
@@ -201,6 +205,7 @@ public sealed class HostConfig
     {
         List<string> l => new List<string>(l),
         Dictionary<string, string> d => new Dictionary<string, string>(d),
+        List<Announcement> a => a.Select(x => x with { }).ToList(),
         _ => value,
     };
 
