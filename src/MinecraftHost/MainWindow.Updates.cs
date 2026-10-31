@@ -26,7 +26,12 @@ public partial class MainWindow
         ShowUpdate();
         _updateTimer.Tick += (_, _) => _ = CheckForUpdateAsync();
         _updateTimer.Start();
-        Closed += (_, _) => { if (_restartAfterClose) Updater.StartNew(); };
+        Closed += (_, _) =>
+        {
+            if (!_restartAfterClose) return;
+            App.ReleaseSingleInstance();   // or the new version would see this one still running and quit
+            Updater.StartNew();
+        };
         _ = CheckForUpdateAsync();
     }
 

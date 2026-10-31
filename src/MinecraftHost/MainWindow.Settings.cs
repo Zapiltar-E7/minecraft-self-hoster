@@ -84,6 +84,9 @@ public partial class MainWindow
         if (WindowState == WindowState.Minimized && HostConfig.Load()?.TrayOnMinimize != false) { Hide(); _tray.Show(); }
     }
 
+    /// <summary>The app was opened again from this folder (App): show this window instead, even from the tray.</summary>
+    public void BringToFront() => ShowFromTray();
+
     void ShowFromTray()
     {
         Show();

@@ -41,11 +41,32 @@ public static class Updater
 
     static Version Normalize(Version v) => new(v.Major, v.Minor, Math.Max(v.Build, 0), Math.Max(v.Revision, 0));
 
-    /// <summary>At startup: removes the exe an earlier update replaced.</summary>
+    /// <summary>At startup: removes the exes earlier updates replaced ("&lt;name&gt;.old.exe", or "&lt;name&gt;.old-&lt;time&gt;.exe").</summary>
     public static void CleanUp()
     {
-        try { if (File.Exists(OldPath)) File.Delete(OldPath); }
-        catch { }   // another copy of the app is still running from it
+        var dir = Path.GetDirectoryName(ExePath)!;
+        foreach (var old in Directory.GetFiles(dir, Path.GetFileNameWithoutExtension(ExePath) + ".old*.exe"))
+        {
+            try { File.Delete(old); }
+            catch { }   // another copy of the app is still running from it: next time
+        }
+    }
+
+    /// <summary>
+    /// Where the running exe goes aside: "&lt;name&gt;.old.exe", or a dated name when that one can't be removed
+    /// (another copy of the app, perhaps hidden in the tray, still runs from it).
+    /// </summary>
+    static string FreeOldPath()
+    {
+        try
+        {
+            if (File.Exists(OldPath)) File.Delete(OldPath);
+            return OldPath;
+        }
+        catch (Exception e) when (e is UnauthorizedAccessException or IOException)
+        {
+            return Path.Combine(Path.GetDirectoryName(ExePath)!, $"{Path.GetFileNameWithoutExtension(ExePath)}.old-{DateTime.Now:yyyyMMdd-HHmmss}.exe");
+        }
     }
 
     public sealed record Release(Version Version, string Tag, string ExeUrl, string SigUrl, string PageUrl);
@@ -76,10 +97,10 @@ public static class Updater
             var signature = Convert.FromBase64String((await Net.Http.GetStringAsync(release.SigUrl, ct)).Trim());
             if (!Verify(download, release.Version, signature))
                 throw new InvalidOperationException($"The download of version {Text(release.Version)} isn't signed by this app's developer, so it wasn't installed.");
-            if (File.Exists(OldPath)) File.Delete(OldPath);
-            File.Move(ExePath, OldPath);
+            var aside = FreeOldPath();
+            File.Move(ExePath, aside);
             try { File.Move(download, ExePath); }
-            catch { File.Move(OldPath, ExePath); throw; }   // put the running one back
+            catch { File.Move(aside, ExePath); throw; }   // put the running one back
             Installed = release.Version;
         }
         finally { try { if (File.Exists(download)) File.Delete(download); } catch { } }
