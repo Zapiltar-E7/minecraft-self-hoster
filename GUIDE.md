@@ -155,7 +155,9 @@ If the server type can't load mods (Paper, Vanilla) or plugins (Fabric, Quilt, F
 - **Placeholders**, inserted with the buttons under the message:
   - `{map}` is the web map's link right now, as a clickable link in chat. It follows however the map is shared (Cloudflare link, playit.gg or port forwarding), so it's never out of date, even though a Cloudflare link changes every start. If the map has no link at that moment, the announcement waits for the next time instead of posting an old one.
   - `{address}` is the address friends join with, and `{online}` is how many players are on.
-- **Colours:** `&` codes work, for example `&b` for aqua or `&e` for yellow.
+- **Formatting:** the toolbar above the message has the 16 chat colours, **any colour** (the rainbow button, Minecraft 1.16 and later), **bold**, *italic*, underline, strikethrough, obfuscated (scrambled letters) and reset. Select text first to format just that part. The buttons write `&` codes you can also type yourself, like `&b` for aqua, `&l` for bold or `&#FF8800` for orange.
+- **Several lines:** press Enter for a new line; each shows as its own line in chat.
+- **Players see** shows the message as it will look in chat, with the real map link when there is one.
 - **Live map link** adds `Live map: {map}` every 30 minutes in one click.
 - **Send now** posts it immediately, to see how it looks in game.
 

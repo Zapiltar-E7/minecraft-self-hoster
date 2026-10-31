@@ -281,7 +281,7 @@
         <Setter.Value>
           <ControlTemplate TargetType="TextBox">
             <Border x:Name="Bd" Background="{DynamicResource Field}" BorderBrush="{DynamicResource FieldBorder}" BorderThickness="1" CornerRadius="7" Padding="8,0" MinHeight="32">
-              <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+              <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsKeyboardFocused" Value="True">

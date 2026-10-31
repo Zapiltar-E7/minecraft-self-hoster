@@ -91,7 +91,12 @@ public partial class MainWindow
         }
     }
 
-    static string Short(string text) => text.Length > 60 ? text[..57] + "..." : text;
+    /// <summary>One line for the list: line breaks shown as " / ", long text cut short.</summary>
+    static string Short(string text)
+    {
+        text = text.Replace("\r\n", "\n").Trim().Replace("\n", " / ");
+        return text.Length > 60 ? text[..57] + "..." : text;
+    }
 
     // ------------------------------------------------------------ the list
 
@@ -186,16 +191,106 @@ public partial class MainWindow
     void EditAnnouncement(Announcement? existing)
     {
         var a = existing ?? new Announcement();
-        var box = new TextBox { Style = (Style)FindResource("Input"), Text = a.Text, AcceptsReturn = false, MaxLength = 250 };
+        // several lines tall: Enter starts a new line, and each line shows as its own line in chat
+        var box = new TextBox
+        {
+            Style = (Style)FindResource("Input"), Text = a.Text, MaxLength = 500,
+            AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, Height = 116, Padding = new Thickness(0, 7, 0, 7),
+            VerticalContentAlignment = VerticalAlignment.Top, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        };
         System.Windows.Automation.AutomationProperties.SetName(box, "Message");
-        var preview = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0), FontSize = 12 };
-        preview.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+        // what players see, styled like chat: always dark, the colours are Minecraft's, not the theme's
+        var preview = new TextBlock { TextWrapping = TextWrapping.Wrap, FontFamily = (FontFamily)FindResource("Mono"), FontSize = 12, Foreground = Brushes.White };
+        var previewBox = new Border { Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x1F, 0x22)), CornerRadius = new CornerRadius(7), Padding = new Thickness(10, 8, 10, 8), Margin = new Thickness(0, 4, 0, 0), Child = preview };
         void Preview()
         {
             var config = HostConfig.LoadOrNew();
-            preview.Text = box.Text.Trim().Length == 0 ? "Players see: (nothing yet)" : "Players see: " + Announcements.Preview(box.Text, n => AnnounceValue(n, config));
+            preview.Inlines.Clear();
+            if (box.Text.Trim().Length == 0) { preview.Inlines.Add(new System.Windows.Documents.Run("(nothing yet)") { Foreground = Brushes.Gray }); return; }
+            foreach (var p in Announcements.Parse(box.Text))
+            {
+                var text = p.Token == null ? p.Text : AnnounceValue(p.Token, config) ?? p.Token switch
+                {
+                    "map" => "(map link)",
+                    "address" => "(join address)",
+                    _ => "(players online)",
+                };
+                if (p.Obfuscated) text = new string(text.Select(ch => ch is '\n' or ' ' ? ch : '▒').ToArray());   // it scrambles in game
+                var hex = p.Token == "map" && p.Color == null ? "#55FFFF" : Announcements.Hex(p.Color);
+                var run = new System.Windows.Documents.Run(text) { Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)) };
+                if (p.Bold) run.FontWeight = FontWeights.Bold;
+                if (p.Italic) run.FontStyle = FontStyles.Italic;
+                var lines = new TextDecorationCollection();
+                if (p.Underline || p.Token == "map") lines.Add(TextDecorations.Underline);
+                if (p.Strike) lines.Add(TextDecorations.Strikethrough);
+                if (lines.Count > 0) run.TextDecorations = lines;
+                preview.Inlines.Add(run);
+            }
         }
         box.TextChanged += (_, _) => Preview();
+
+        // formatting: wraps the selected text (then resets after it), or goes in at the caret
+        void Format(string code)
+        {
+            var start = box.SelectionStart;
+            if (box.SelectionLength > 0)
+            {
+                var wrapped = code + box.SelectedText + "&r";
+                box.SelectedText = wrapped;
+                box.CaretIndex = start + wrapped.Length;
+            }
+            else
+            {
+                box.Text = box.Text.Insert(start, code);
+                box.CaretIndex = start + code.Length;
+            }
+            box.Focus();
+        }
+        var tools = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
+        foreach (var (code, name, hex) in Motd.Colors)
+        {
+            var chip = new Button
+            {
+                Width = 20, Height = 20, Padding = new Thickness(0), Margin = new Thickness(0, 0, 4, 4), ToolTip = name,
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)),
+            };
+            chip.SetResourceReference(Control.BorderBrushProperty, "FieldBorder");
+            System.Windows.Automation.AutomationProperties.SetName(chip, name);
+            chip.Click += (_, _) => Format("&" + code);
+            tools.Children.Add(chip);
+        }
+        var custom = new Button { Width = 20, Height = 20, Padding = new Thickness(0), Margin = new Thickness(0, 0, 4, 4), ToolTip = "Any colour... (Minecraft 1.16 and later)" };
+        var rainbow = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        foreach (var (hex, at) in new[] { ("#FF5C5C", 0.0), ("#F5C451", 0.25), ("#6CD98A", 0.5), ("#4C8DFF", 0.75), ("#C77DFF", 1.0) })
+            rainbow.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(hex), at));
+        custom.Background = rainbow;
+        System.Windows.Automation.AutomationProperties.SetName(custom, "Any colour");
+        custom.Click += (_, _) =>
+        {
+            var (selStart, selLength) = (box.SelectionStart, box.SelectionLength);
+            var picked = PickColor(Color.FromRgb(0x7C, 0xC4, 0xFF), "Text colour", tryOnTheme: false);
+            if (picked == null) return;
+            box.Select(selStart, selLength);   // the picker took the focus; put the selection back
+            Format("&" + picked);
+        };
+        tools.Children.Add(custom);
+        foreach (var (code, label, tip) in new[]
+        {
+            ('l', "B", "Bold"), ('o', "I", "Italic"), ('n', "U", "Underline"), ('m', "S", "Strikethrough"),
+            ('k', "?", "Obfuscated: scrambled, changing letters"), ('r', "×", "Reset to plain"),
+        })
+        {
+            var b = new Button
+            {
+                Content = label, Width = 24, Height = 20, Padding = new Thickness(0), Margin = new Thickness(code == 'l' ? 6 : 0, 0, 4, 4), FontSize = 11, ToolTip = tip,
+                FontWeight = code == 'l' ? FontWeights.Bold : FontWeights.Normal, FontStyle = code == 'o' ? FontStyles.Italic : FontStyles.Normal,
+            };
+            if (code == 'n') b.Content = new TextBlock { Text = "U", TextDecorations = TextDecorations.Underline };
+            if (code == 'm') b.Content = new TextBlock { Text = "S", TextDecorations = TextDecorations.Strikethrough };
+            System.Windows.Automation.AutomationProperties.SetName(b, tip.Split(':')[0]);
+            b.Click += (_, _) => Format("&" + code);
+            tools.Children.Add(b);
+        }
 
         var inserts = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
         foreach (var (label, token, tip) in new[]
@@ -245,9 +340,11 @@ public partial class MainWindow
             var panel = new StackPanel();
             panel.Children.Add(Heading(existing == null ? "New announcement" : "Announcement", MessageBoxImage.None));
             panel.Children.Add(new TextBlock { Text = "Message", Style = (Style)FindResource("FieldLabel"), Margin = new Thickness(0, 14, 0, 4) });
+            panel.Children.Add(tools);
             panel.Children.Add(box);
             panel.Children.Add(inserts);
-            panel.Children.Add(preview);
+            panel.Children.Add(new TextBlock { Text = "Players see", Style = (Style)FindResource("FieldLabel"), Margin = new Thickness(0, 8, 0, 0) });
+            panel.Children.Add(previewBox);
             panel.Children.Add(new TextBlock { Text = "How often", Style = (Style)FindResource("FieldLabel"), Margin = new Thickness(0, 14, 0, 4) });
             panel.Children.Add(every);
             panel.Children.Add(players);

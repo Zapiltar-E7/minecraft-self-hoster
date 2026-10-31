@@ -12,8 +12,11 @@ namespace MinecraftHost;
 /// </summary>
 public partial class MainWindow
 {
-    /// <summary>Returns the picked colour as "#RRGGBB", or null if cancelled.</summary>
-    string? PickColor(Color start)
+    /// <summary>
+    /// Returns the picked colour as "#RRGGBB", or null if cancelled. <paramref name="tryOnTheme"/>: show it as the app's
+    /// highlight while picking (the highlight picker); off for other colours, like an announcement's text.
+    /// </summary>
+    string? PickColor(Color start, string title = "Highlight colour", bool tryOnTheme = true)
     {
         var (hue, sat, val) = ToHsv(start);
         var before = Themes.CurrentHighlight?.Name;   // put back on Cancel
@@ -49,7 +52,7 @@ public partial class MainWindow
             squareKnob.Margin = new Thickness(sat * Math.Max(0, square.ActualWidth) - 8, (1 - val) * square.Height - 8, 0, 0);
             hueKnob.Margin = new Thickness(hue / 360 * Math.Max(0, hueBar.ActualWidth - 18), -1, 0, -1);
         }
-        void TryOn() => Themes.Apply(Themes.Current.Name, Hex(), animate: false);
+        void TryOn() { if (tryOnTheme) Themes.Apply(Themes.Current.Name, Hex(), animate: false); }
 
         void Drag(FrameworkElement area, Action<Point> at)
         {
@@ -73,7 +76,7 @@ public partial class MainWindow
         var result = ShowOverlay(close =>
         {
             var panel = new StackPanel();
-            panel.Children.Add(Heading("Highlight colour", MessageBoxImage.None));
+            panel.Children.Add(Heading(title, MessageBoxImage.None));
             square.Margin = new Thickness(0, 14, 0, 0);
             panel.Children.Add(square);
             panel.Children.Add(hueBar);
@@ -83,7 +86,7 @@ public partial class MainWindow
             return panel;
         }, 420) as string;
 
-        if (result == null) Themes.Apply(Themes.Current.Name, before, animate: false);
+        if (result == null && tryOnTheme) Themes.Apply(Themes.Current.Name, before, animate: false);
         return result;
     }
 
