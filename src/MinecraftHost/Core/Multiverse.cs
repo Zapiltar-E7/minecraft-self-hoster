@@ -41,21 +41,26 @@ public static class Multiverse
         return null;
     }
 
-    /// <summary>Multiverse-Inventories' last location is switched on (it's an optional share, listed under active-optional-shares).</summary>
-    public static bool LastLocationOn()
+    /// <summary>One of Multiverse-Inventories' optional shares is switched on (listed under active-optional-shares); off, groups ignore it.</summary>
+    public static bool OptionalOn(string share)
     {
         if (!File.Exists(InvConfig)) return false;
         var inList = false;
         foreach (var raw in File.ReadLines(InvConfig))
         {
             var line = raw.Trim();
-            if (line.StartsWith("active-optional-shares:")) { inList = true; if (line.Contains("last_location")) return true; continue; }
+            if (line.StartsWith("active-optional-shares:")) { inList = true; if (line.Contains(share)) return true; continue; }
             if (!inList) continue;
-            if (line.StartsWith("- ")) { if (line[2..].Trim().Trim('\'', '"') == "last_location") return true; }
+            if (line.StartsWith("- ")) { if (line[2..].Trim().Trim('\'', '"') == share) return true; }
             else if (line.Length > 0) inList = false;
         }
         return false;
     }
+
+    public static bool LastLocationOn() => OptionalOn("last_location");
+
+    /// <summary>The group checkboxes that are optional shares: they only count once switched on.</summary>
+    public static readonly string[] OptionalShares = { "advancements", "game_statistics", "recipes" };
 
     public static bool LastLocationForAllTeleports => Flag(InvConfig, "apply-last-location-for-all-teleports") ?? true;
     public static bool LastLocationResetOnDeath => Flag(InvConfig, "reset-last-location-on-death") ?? false;
@@ -90,6 +95,14 @@ public static class Multiverse
         var set = shares.Select(s => s.ToLowerInvariant()).ToHashSet();
         if (set.Contains("all")) return Shares.Select(s => s.Id).ToHashSet();
         return Shares.Where(s => set.Contains(s.Id) || s.Parts.All(set.Contains)).Select(s => s.Id).ToHashSet();
+    }
+
+    /// <summary>What a group really keeps apart from other groups: its shares, without optional ones that are switched off.</summary>
+    public static HashSet<string> ActiveSharedIds(IEnumerable<string> shares)
+    {
+        var ids = SharedIds(shares);
+        ids.RemoveWhere(id => OptionalShares.Contains(id) && !OptionalOn(id));
+        return ids;
     }
 
     public static List<MvWorld> ReadWorlds()

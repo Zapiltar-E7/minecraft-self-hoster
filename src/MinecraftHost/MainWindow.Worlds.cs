@@ -63,11 +63,13 @@ public partial class MainWindow
             : "Start the server to create, change or delete worlds and groups.";
         var worlds = Multiverse.ReadWorlds();
         var groups = Multiverse.HasInventories ? Multiverse.ReadGroups() : new();
+        var mcmmoOff = McmmoWorlds.Installed ? McmmoWorlds.Off() : new HashSet<string>();
         foreach (var w in worlds)
         {
             var group = groups.FirstOrDefault(g => g.Worlds.Contains(w.Name, StringComparer.OrdinalIgnoreCase));
             var hint = $"{EnvLabel(w.Environment)} · {Cap1(w.GameMode)} · {Cap1(w.Difficulty)}"
-                       + (group != null ? $" · group {group.Name}" : "") + (w.Hidden ? " · hidden" : "") + (!w.AutoLoad ? " · not loaded at start" : "");
+                       + (group != null ? $" · group {group.Name}" : "") + (w.Hidden ? " · hidden" : "") + (!w.AutoLoad ? " · not loaded at start" : "")
+                       + (mcmmoOff.Contains(w.Name) ? " · mcMMO off" : "");
             var alias = Multiverse.Plain(w.Alias);
             var edit = SmallIcon("", "Edit " + w.Name, live, () => EditWorld(w));
             var delete = SmallIcon("", MainWorld(w.Name) ? "The server's main worlds can't be deleted here" : "Delete " + w.Name, live && !MainWorld(w.Name), () => _ = DeleteWorldAsync(w));
@@ -89,7 +91,7 @@ public partial class MainWindow
         GroupsCard.Visibility = Multiverse.HasInventories ? Visibility.Visible : Visibility.Collapsed;
         foreach (var g in groups)
         {
-            var shared = Multiverse.SharedIds(g.Shares);
+            var shared = Multiverse.ActiveSharedIds(g.Shares);
             var shares = shared.Count == Multiverse.Shares.Length ? "everything"
                 : shared.Count == 0 ? "nothing" : string.Join(", ", Multiverse.Shares.Where(s => shared.Contains(s.Id)).Select(s => s.Label.ToLowerInvariant()));
             var edit = SmallIcon("", "Edit group " + g.Name, live, () => _ = EditGroupAsync(g, worlds));
@@ -124,14 +126,15 @@ public partial class MainWindow
     {
         TravelCard.Visibility = Multiverse.HasCore ? Visibility.Visible : Visibility.Collapsed;
         var lastOn = Multiverse.LastLocationOn();
-        SettingRow Row(string icon, string title, string hint, bool on, bool enabled, Func<bool, string> command)
+        SettingRow Row(string icon, string title, string hint, bool on, bool enabled, Func<bool, string> command, Func<bool, Task<bool>>? first = null)
         {
             var sw = new CheckBox { Style = (Style)FindResource("RowSwitch"), IsChecked = on, IsEnabled = enabled };
             System.Windows.Automation.AutomationProperties.SetName(sw, title);
-            RoutedEventHandler changed = (_, _) =>
+            RoutedEventHandler changed = async (_, _) =>
             {
                 var value = sw.IsChecked == true;
                 if (value == on) return;
+                if (first != null && !await first(value)) { sw.IsChecked = on; return; }   // asked, and the answer was no
                 _ = RunMvAsync("Saving...", async () => Check(await MvAsync(command(value))));
             };
             sw.Checked += changed;
@@ -149,9 +152,55 @@ public partial class MainWindow
                 Multiverse.LastLocationResetOnDeath, live && lastOn, v => $"mvinv config reset-last-location-on-death {v.ToString().ToLowerInvariant()}"));
             TravelRows.Children.Add(Row("\uE909", "Worlds not in a group remember too", "Each one keeps its own spot",
                 Multiverse.LastLocationUngrouped, live && lastOn, v => $"mvinv config use-optionals-for-ungrouped-worlds {v.ToString().ToLowerInvariant()}"));
+            // Multiverse-Inventories' optional shares: off, these are the same in every world whatever a group ticks
+            foreach (var (share, icon, title, hint) in new[]
+            {
+                ("advancements", "\uE734", "Advancements for each group", "Groups that share advancements keep their own; other worlds keep theirs too"),
+                ("recipes", "\uE82D", "Recipe book for each group", "Unlocked recipes, kept like advancements"),
+                ("game_statistics", "\uE9D2", "Statistics for each group", "Blocks mined, distance walked and the rest"),
+            })
+                TravelRows.Children.Add(Row(icon, title, hint, Multiverse.OptionalOn(share), live, _ => $"mvinv toggle {share}",
+                    on => on ? ConfirmOptionalShareAsync(title) : Task.FromResult(true)));
         }
         TravelRows.Children.Add(Row("\uE945", "Respawn in the overworld after dying in the nether or end", "Like vanilla Minecraft. Off: they respawn in the same world.",
             Multiverse.RespawnInOverworld, live, v => $"mv config default-respawn-in-overworld {v.ToString().ToLowerInvariant()}"));
+    }
+
+    /// <summary>
+    /// Before an optional share goes on: Multiverse-Inventories files a player's current progress under the group they
+    /// leave next, and a group with nothing saved starts them at none. So a player outside the main group at that moment
+    /// would arrive in it with nothing; everyone's progress is backed up first.
+    /// </summary>
+    async Task<bool> ConfirmOptionalShareAsync(string title)
+    {
+        var level = PlayerLists.GetProperty("level-name") ?? "world";
+        if (Ask($"Turn on {title.ToLowerInvariant()}?\n\n" +
+                "Each group starts empty, so players get a fresh start in other groups. What a player has now stays with the group they're in when they next change worlds, so do this while everyone is in the main worlds (" + level + " and its nether and end), or offline there.\n\n" +
+                "Everyone's advancements, statistics and player files are backed up first.",
+                title, MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return false;
+        try
+        {
+            var to = await Task.Run(() =>
+            {
+                var dest = Path.Combine(Paths.ServerDir, "backups", "player-progress", DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+                foreach (var part in new[] { "advancements", "stats", "playerdata" })
+                {
+                    var from = Path.Combine(Paths.ServerDir, level, part);
+                    if (!Directory.Exists(from)) continue;
+                    var target = Path.Combine(dest, part);
+                    Directory.CreateDirectory(target);
+                    foreach (var f in Directory.GetFiles(from)) File.Copy(f, Path.Combine(target, Path.GetFileName(f)));
+                }
+                return dest;
+            });
+            Log.Host($"Backed up players' advancements, statistics and files to {to}.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Ask("Couldn't back up players' progress, so nothing was changed: " + ex.Message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
     }
 
     Button SmallIcon(string glyph, string tip, bool enabled, Action click)
@@ -327,6 +376,8 @@ public partial class MainWindow
         var weather = Toggle("Weather", w.AllowWeather);
         var hidden = Toggle("Hidden from the world list", w.Hidden);
         var autoLoad = Toggle("Loaded when the server starts", w.AutoLoad);
+        var mcmmoWasOn = !McmmoWorlds.Off().Contains(w.Name);
+        var mcmmo = Toggle("mcMMO skills and XP (changes at the next restart)", mcmmoWasOn);
         var limit = new TextBox { Style = (Style)FindResource("Input"), Width = 90, HorizontalAlignment = HorizontalAlignment.Left, Text = w.PlayerLimit < 0 ? "" : w.PlayerLimit.ToString() };
         System.Windows.Automation.AutomationProperties.SetName(limit, "Player limit");
 
@@ -342,12 +393,25 @@ public partial class MainWindow
             panel.Children.Add(Label("Difficulty"));
             panel.Children.Add(difficulty);
             foreach (var t in new[] { pvp, flight, hunger, weather, hidden, autoLoad }) panel.Children.Add(t);
+            if (McmmoWorlds.Installed) panel.Children.Add(mcmmo);
             panel.Children.Add(Label("Player limit (empty for no limit)", 14));
             panel.Children.Add(limit);
             panel.Children.Add(ButtonRow(new (string, Func<object?>, bool)[] { ("Cancel", () => null, true), ("Save", () => "save", false) }, close));
             return panel;
         }, 460) as string;
         if (save == null) return;
+
+        // mcMMO's own file, not a Multiverse setting: written straight away, read by mcMMO when the server starts
+        if (McmmoWorlds.Installed && (mcmmo.IsChecked == true) != mcmmoWasOn)
+        {
+            try
+            {
+                McmmoWorlds.Set(w.Name, off: mcmmo.IsChecked != true);
+                Log.Host($"mcMMO: {(mcmmo.IsChecked == true ? "on" : "off")} in {w.Name} from the next restart.");
+            }
+            catch (Exception ex) { Ask("Couldn't change mcMMO's world list: " + ex.Message, "Worlds", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            RefreshWorlds();
+        }
 
         var changes = new List<(string Property, string Value)>();
         void Diff(string property, string before, string after) { if (!string.Equals(before, after, StringComparison.OrdinalIgnoreCase)) changes.Add((property, after)); }
@@ -433,6 +497,9 @@ public partial class MainWindow
             foreach (var b in shareBoxes) s.Children.Add(b);
             panel.Children.Add(s);
             panel.Children.Add(new TextBlock { Text = "Anything not shared is kept separately for each group: a player's survival inventory stays out of creative worlds.", FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Foreground = Res("Muted"), Margin = new Thickness(0, 10, 0, 0) });
+            var offOptionals = Multiverse.Shares.Where(x => Multiverse.OptionalShares.Contains(x.Id) && !Multiverse.OptionalOn(x.Id)).Select(x => x.Label.ToLowerInvariant()).ToList();
+            if (offOptionals.Count > 0)
+                panel.Children.Add(new TextBlock { Text = $"Until they're switched on for the whole server (When players change worlds), {string.Join(", ", offOptionals)} are the same in every world whatever is ticked here.", FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Foreground = Res("WarnText"), Margin = new Thickness(0, 6, 0, 0) });
             panel.Children.Add(Label("When players come back to these worlds", 16));
             panel.Children.Add(returnTo);
             if (!Multiverse.LastLocationOn())
