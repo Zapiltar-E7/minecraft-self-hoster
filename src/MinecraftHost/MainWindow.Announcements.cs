@@ -35,12 +35,15 @@ public partial class MainWindow
         {
             _announceDue.Clear();
             _announceSkipNoted.Clear();
+            _randomDue = null;
+            _announceRound.Clear();
             return;
         }
         var config = HostConfig.Load();
         if (config == null) return;
         var now = DateTime.Now;
-        foreach (var a in config.Announcements.Where(a => a.Enabled && a.Text.Trim().Length > 0))
+        if (config.AnnounceRandom) RandomTick(config, now);
+        else foreach (var a in config.Announcements.Where(a => a.Enabled && a.Text.Trim().Length > 0))
         {
             // the first one goes out one interval after the server is up, then every interval
             if (!_announceDue.TryGetValue(a.Id, out var due)) { _announceDue[a.Id] = now.AddMinutes(a.EveryMinutes); continue; }
@@ -50,6 +53,41 @@ public partial class MainWindow
             SendAnnouncement(a, config);
         }
         if (SecManage.IsChecked == true && ManageAnnounce.IsChecked == true && ServerPage.Visibility == Visibility.Visible) RebuildAnnouncements();   // the "next in" times
+    }
+
+    // "one at random": a shuffled round of the switched-on announcements, each sent once before any repeats
+    DateTime? _randomDue;
+    readonly Queue<string> _announceRound = new();
+    string? _announceLast;
+
+    void RandomTick(HostConfig config, DateTime now)
+    {
+        if (_randomDue == null) { _randomDue = now.AddMinutes(config.AnnounceRandomMinutes); return; }   // one interval after the server is up
+        if (now < _randomDue) return;
+        _randomDue = now.AddMinutes(config.AnnounceRandomMinutes);
+        if (config.AnnounceRandomOnlyWithPlayers && _players.Count == 0) return;
+        var on = config.Announcements.Where(a => a.Enabled && a.Text.Trim().Length > 0).ToDictionary(a => a.Id);
+        // try each still in the round once, so one that can't go out now (no map link yet) doesn't use up the turn
+        var tried = 0;
+        while (tried < on.Count)
+        {
+            if (_announceRound.Count == 0) NewRound(on.Keys.ToList());
+            var id = _announceRound.Dequeue();
+            if (!on.TryGetValue(id, out var a)) continue;   // switched off or deleted since the round was made
+            tried++;
+            if (id == _announceLast && on.Count > 1) { _announceRound.Enqueue(id); continue; }   // the one just sent waits its turn
+            if (SendAnnouncement(a, config)) { _announceLast = id; return; }
+        }
+        // nothing else could go out (no map link yet): the one sent last time, rather than nothing
+        if (_announceLast != null && on.TryGetValue(_announceLast, out var last)) SendAnnouncement(last, config);
+    }
+
+    /// <summary>A new shuffled round of every switched-on announcement, not starting with the one just sent.</summary>
+    void NewRound(List<string> ids)
+    {
+        var order = ids.OrderBy(_ => Random.Shared.Next()).ToList();
+        if (order.Count > 1 && order[0] == _announceLast) (order[0], order[^1]) = (order[^1], order[0]);
+        foreach (var id in order) _announceRound.Enqueue(id);
     }
 
     bool SendAnnouncement(Announcement a, HostConfig config)
@@ -104,6 +142,7 @@ public partial class MainWindow
     {
         var config = HostConfig.LoadOrNew();
         AnnounceRows.Children.Clear();
+        AddRandomRows(config);
         if (config.Announcements.Count == 0)
             AnnounceRows.Children.Add(new SettingRow { Icon = "", Title = "No announcements yet", Hint = "Add one below, or the live map link." });
         foreach (var a in config.Announcements)
@@ -124,11 +163,51 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>"One at random" at the top of the list: on, it replaces each announcement's own timer.</summary>
+    void AddRandomRows(HostConfig config)
+    {
+        void Change(Action<HostConfig> set)
+        {
+            var c = HostConfig.LoadOrNew();
+            set(c);
+            c.Save();
+            _randomDue = null;   // start the new interval from now
+            Dispatcher.BeginInvoke(RebuildAnnouncements);
+        }
+        var hint = "Off: each announcement goes out on its own timer";
+        if (config.AnnounceRandom)
+        {
+            hint = Announcements.Every(config.AnnounceRandomMinutes) + ", each once before any repeats";
+            if (_state == ServerState.Running && _randomDue is { } due)
+                hint += $" · next in {Math.Max(1, (int)Math.Ceiling((due - DateTime.Now).TotalMinutes))} min";
+        }
+        var random = new CheckBox { Style = (Style)FindResource("RowSwitch"), IsChecked = config.AnnounceRandom };
+        System.Windows.Automation.AutomationProperties.SetName(random, "One at random");
+        random.Checked += (_, _) => Change(c => c.AnnounceRandom = true);
+        random.Unchecked += (_, _) => Change(c => c.AnnounceRandom = false);
+        AnnounceRows.Children.Add(new SettingRow { Icon = "", Title = "One at random", Hint = hint, Content = random });
+        if (!config.AnnounceRandom) return;
+
+        var every = new ComboBox { Width = 170 };
+        System.Windows.Automation.AutomationProperties.SetName(every, "How often");
+        foreach (var m in AnnounceIntervals.Union(new[] { config.AnnounceRandomMinutes }).OrderBy(x => x)) every.Items.Add(new ComboBoxItem { Content = Announcements.Every(m), Tag = m });
+        every.SelectedItem = every.Items.Cast<ComboBoxItem>().First(i => (int)i.Tag == config.AnnounceRandomMinutes);
+        every.SelectionChanged += (_, _) => Change(c => c.AnnounceRandomMinutes = (int)((ComboBoxItem)every.SelectedItem).Tag);
+        AnnounceRows.Children.Add(new SettingRow { Icon = "", Title = "How often", Hint = "One announcement each time", Content = every });
+        var players = new CheckBox { Style = (Style)FindResource("RowSwitch"), IsChecked = config.AnnounceRandomOnlyWithPlayers };
+        System.Windows.Automation.AutomationProperties.SetName(players, "Only when players are online");
+        players.Checked += (_, _) => Change(c => c.AnnounceRandomOnlyWithPlayers = true);
+        players.Unchecked += (_, _) => Change(c => c.AnnounceRandomOnlyWithPlayers = false);
+        AnnounceRows.Children.Add(new SettingRow { Icon = "", Title = "Only when players are online", Hint = "Skip the turn while the server is empty", Content = players });
+    }
+
     UIElement AnnounceRow(Announcement a)
     {
         var running = _state == ServerState.Running;
-        var hint = Announcements.Every(a.EveryMinutes) + (a.OnlyWithPlayers ? " · when players are online" : "");
-        if (running && a.Enabled && _announceDue.TryGetValue(a.Id, out var due))
+        var randomMode = HostConfig.LoadOrNew().AnnounceRandom;
+        var hint = randomMode ? (a.Enabled ? "In the random rotation" : "Left out of the rotation")
+            : Announcements.Every(a.EveryMinutes) + (a.OnlyWithPlayers ? " · when players are online" : "");
+        if (!randomMode && running && a.Enabled && _announceDue.TryGetValue(a.Id, out var due))
         {
             var left = Math.Max(1, (int)Math.Ceiling((due - DateTime.Now).TotalMinutes));
             hint += $" · next in {left} min";
@@ -382,9 +461,14 @@ public partial class MainWindow
             panel.Children.Add(inserts);
             panel.Children.Add(new TextBlock { Text = "Players see", Style = (Style)FindResource("FieldLabel"), Margin = new Thickness(0, 8, 0, 0) });
             panel.Children.Add(previewBox);
-            panel.Children.Add(new TextBlock { Text = "How often", Style = (Style)FindResource("FieldLabel"), Margin = new Thickness(0, 14, 0, 4) });
-            panel.Children.Add(every);
-            panel.Children.Add(players);
+            if (HostConfig.LoadOrNew().AnnounceRandom)
+                panel.Children.Add(new TextBlock { Text = "Sent in the random rotation, set at the top of the list.", FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = Res("Muted"), Margin = new Thickness(0, 14, 0, 0) });
+            else
+            {
+                panel.Children.Add(new TextBlock { Text = "How often", Style = (Style)FindResource("FieldLabel"), Margin = new Thickness(0, 14, 0, 4) });
+                panel.Children.Add(every);
+                panel.Children.Add(players);
+            }
             panel.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 16, 0, 0), Children = { sendNow, sent } });
             panel.Children.Add(ButtonRow(new (string, Func<object?>, bool)[] { ("Cancel", () => null, true), ("Save", () => Result(), false) }, close));
             Preview();

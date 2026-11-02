@@ -110,6 +110,10 @@ public sealed class ServerProfile
     public Dictionary<string, string> ServiceMethods { get; set; } = new();
     /// <summary>Messages posted in chat on a schedule (Server → Announcements).</summary>
     public List<Announcement> Announcements { get; set; } = new();
+    /// <summary>One announcement at random every <see cref="AnnounceRandomMinutes"/>, each once before any repeats, instead of each on its own timer.</summary>
+    public bool AnnounceRandom { get; set; }
+    public int AnnounceRandomMinutes { get; set; } = 15;
+    public bool AnnounceRandomOnlyWithPlayers { get; set; } = true;
     public List<string> SeenServices { get; set; } = new();
 
     /// <summary>The folder it runs from (null ServerDir is the "server" folder next to the app).</summary>
@@ -184,6 +188,10 @@ public sealed class HostConfig
     public Dictionary<string, string> ServiceMethods { get; set; } = new();
     /// <summary>Messages posted in chat on a schedule (Server → Announcements).</summary>
     public List<Announcement> Announcements { get; set; } = new();
+    /// <summary>One announcement at random every <see cref="AnnounceRandomMinutes"/>, each once before any repeats, instead of each on its own timer.</summary>
+    public bool AnnounceRandom { get; set; }
+    public int AnnounceRandomMinutes { get; set; } = 15;
+    public bool AnnounceRandomOnlyWithPlayers { get; set; } = true;
     /// <summary>Service ids already shown on the Connections tab (newer ones put a dot on the tab).</summary>
     public List<string> SeenServices { get; set; } = new();
     /// <summary>Folder the last export was saved to; the next export starts there.</summary>
