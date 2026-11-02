@@ -42,7 +42,7 @@ public partial class MainWindow : Window
         Themes.Changed += () => { DarkTitleBar.Apply(this); UpdateView(); RefreshThemedCards(); };
         // the open page's highlight and the open section's underline slide to the one picked
         Motion.Track(NavMarker, NavLayer, NavButtons, underline: false);
-        Motion.Track(SecMarker, SecLayer, new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep, SecAnnounce, SecWorlds, SecCommands }, underline: true);
+        Motion.Track(SecMarker, SecLayer, new[] { SecPlayers, SecGeneral, SecWorld, SecManage, SecUpkeep }, underline: true);
         Motion.Track(CfgMarker, CfgLayer, new[] { CfgServer, CfgPlugins, CfgDatapacks, CfgMods }, underline: true);
         _logTimer.Tick += (_, _) => DrainLog();
         _logTimer.Start();
@@ -214,8 +214,7 @@ public partial class MainWindow : Window
     {
         if (ServerCol0 == null) return;   // fires during InitializeComponent
         LayoutServerCards(animate: true);
-        if (SecWorlds.IsChecked == true) RefreshWorlds();
-        if (SecCommands.IsChecked == true) RefreshCommands();
+        if (SecManage.IsChecked == true) { RefreshWorlds(); RefreshCommands(); }
     }
 
     bool? _serverTwo;
@@ -224,20 +223,19 @@ public partial class MainWindow : Window
     void LayoutServerCards(bool animate)
     {
         var section = SecPlayers.IsChecked == true ? SecPlayers : SecWorld.IsChecked == true ? SecWorld : SecUpkeep.IsChecked == true ? SecUpkeep
-            : SecAnnounce.IsChecked == true ? SecAnnounce : SecWorlds.IsChecked == true ? SecWorlds : SecCommands.IsChecked == true ? SecCommands : SecGeneral;
+            : SecManage.IsChecked == true ? SecManage : SecGeneral;
         var two = false;   // one column of panels (mockup B)
         if (two == _serverTwo && section == _serverLaidOut) return;
         var changed = section != _serverLaidOut;
-        var sections = new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep, SecAnnounce, SecWorlds, SecCommands };
+        var sections = new[] { SecPlayers, SecGeneral, SecWorld, SecManage, SecUpkeep };
         var dx = _serverLaidOut == null || Array.IndexOf(sections, section) > Array.IndexOf(sections, _serverLaidOut) ? 18 : -18;
         _serverTwo = two;
         _serverLaidOut = section;
         var (left, right) = section == SecPlayers ? (new FrameworkElement[] { PlayersCard, WeekCard }, new FrameworkElement[] { WhitelistCard, OpsCard })
             : section == SecWorld ? (new FrameworkElement[] { ListingCard }, new FrameworkElement[] { GameplayCard })
             : section == SecUpkeep ? (new FrameworkElement[] { RestartCard }, new FrameworkElement[] { BackupCard })
-            : section == SecAnnounce ? (new FrameworkElement[] { AnnounceCard }, Array.Empty<FrameworkElement>())
-            : section == SecWorlds ? (new FrameworkElement[] { WorldsSection }, Array.Empty<FrameworkElement>())
-            : section == SecCommands ? (new FrameworkElement[] { CommandsSection }, Array.Empty<FrameworkElement>())
+            // Manage: worlds, then custom commands, then announcements, one after another
+            : section == SecManage ? (new FrameworkElement[] { WorldsSection, CommandsSection, AnnounceCard }, Array.Empty<FrameworkElement>())
             : (new FrameworkElement[] { SoftwareCard }, new FrameworkElement[] { MemoryCard, FolderCard });
         foreach (var card in new FrameworkElement[] { SoftwareCard, MemoryCard, FolderCard, PlayersCard, WeekCard, WhitelistCard, OpsCard, ListingCard, GameplayCard, RestartCard, BackupCard, AnnounceCard, WorldsSection, CommandsSection })
             (card.Parent as Panel)?.Children.Remove(card);

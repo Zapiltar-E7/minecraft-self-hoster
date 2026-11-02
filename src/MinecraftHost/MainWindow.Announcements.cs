@@ -49,7 +49,7 @@ public partial class MainWindow
             if (a.OnlyWithPlayers && _players.Count == 0) continue;
             SendAnnouncement(a, config);
         }
-        if (SecAnnounce.IsChecked == true && ServerPage.Visibility == Visibility.Visible) RebuildAnnouncements();   // the "next in" times
+        if (SecManage.IsChecked == true && ServerPage.Visibility == Visibility.Visible) RebuildAnnouncements();   // the "next in" times
     }
 
     bool SendAnnouncement(Announcement a, HostConfig config)

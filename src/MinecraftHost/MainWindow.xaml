@@ -213,12 +213,6 @@
       <Border BorderBrush="{DynamicResource CardBorder}" BorderThickness="0,0,0,1" Margin="0,0,0,18">
         <Grid>
           <StackPanel Orientation="Horizontal">
-          <RadioButton x:Name="SecGeneral" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" IsChecked="True" ToolTip="Server software, memory and folder">
-            <StackPanel Orientation="Horizontal">
-              <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE7F4;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-              <TextBlock Text="General"/>
-            </StackPanel>
-          </RadioButton>
           <RadioButton x:Name="SecPlayers" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="Who's online, the whitelist and operators">
             <StackPanel Orientation="Horizontal">
               <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE716;" VerticalAlignment="Center" Margin="0,1,8,0"/>
@@ -228,34 +222,28 @@
                        ToolTip="Someone asked to join"/>
             </StackPanel>
           </RadioButton>
+          <RadioButton x:Name="SecGeneral" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" IsChecked="True" ToolTip="Server software, memory and folder">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE7F4;" VerticalAlignment="Center" Margin="0,1,8,0"/>
+              <TextBlock Text="General"/>
+            </StackPanel>
+          </RadioButton>
           <RadioButton x:Name="SecWorld" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="How the server looks in the multiplayer list, and gameplay settings">
             <StackPanel Orientation="Horizontal">
               <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE909;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-              <TextBlock Text="Gameplay"/>
+              <TextBlock Text="Options"/>
+            </StackPanel>
+          </RadioButton>
+          <RadioButton x:Name="SecManage" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="Worlds, custom commands and announcements">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE912;" VerticalAlignment="Center" Margin="0,1,8,0"/>
+              <TextBlock Text="Manage"/>
             </StackPanel>
           </RadioButton>
           <RadioButton x:Name="SecUpkeep" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="Automatic backups, scheduled restarts and crash recovery">
             <StackPanel Orientation="Horizontal">
               <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE777;" VerticalAlignment="Center" Margin="0,1,8,0"/>
               <TextBlock Text="Backups &amp; restarts"/>
-            </StackPanel>
-          </RadioButton>
-          <RadioButton x:Name="SecAnnounce" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="Messages posted in chat on a schedule">
-            <StackPanel Orientation="Horizontal">
-              <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE789;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-              <TextBlock Text="Announcements"/>
-            </StackPanel>
-          </RadioButton>
-          <RadioButton x:Name="SecWorlds" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="Multiverse worlds and world groups">
-            <StackPanel Orientation="Horizontal">
-              <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE909;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-              <TextBlock Text="Worlds"/>
-            </StackPanel>
-          </RadioButton>
-          <RadioButton x:Name="SecCommands" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="The Custom Commands plugin's commands">
-            <StackPanel Orientation="Horizontal">
-              <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE756;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-              <TextBlock Text="Commands"/>
             </StackPanel>
           </RadioButton>
         </StackPanel>
