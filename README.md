@@ -78,6 +78,7 @@ Installed copies show the update the next time they check (if Check for updates 
 
 ## Credits
 
+- [AvalonEdit](https://github.com/icsharpcode/AvalonEdit) (MIT License) is the config editor's text view.
 - [NVorbis](https://github.com/NVorbis/NVorbis) (MIT License, © 2020 Andrew Ward) plays Minecraft's sounds for a small easter egg. Minecraft's own sounds and textures are never included; they're read from a Minecraft installation already on the PC.
 - [playit.gg](https://playit.gg), [Cloudflare](https://www.cloudflare.com) and [Eclipse Temurin](https://adoptium.net).
 

@@ -159,6 +159,7 @@ public partial class MainWindow
         foreach (var (name, what) in new[]
         {
             ("NVorbis", "MIT License, © 2020 Andrew Ward. Plays Minecraft's sounds for a small easter egg."),
+            ("AvalonEdit", "MIT License, © AvalonEdit contributors. The config editor's text view."),
             ("playit.gg", "Tunnels so friends can join without port forwarding."),
             ("Cloudflare", "Quick links for web maps."),
             ("Eclipse Temurin", "The Java the server runs on."),

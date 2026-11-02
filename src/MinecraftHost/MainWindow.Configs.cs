@@ -34,7 +34,17 @@ public partial class MainWindow
         ConfigPage.PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control) { SaveConfig(); e.Handled = true; }
+            // Ctrl+F: the find bar, with the selected text in it
+            if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control && TextHost.Visibility == Visibility.Visible)
+            {
+                var picked = ConfigEditor.SelectedText;
+                if (picked.Length > 0 && !picked.Contains('\n')) TxtFind.Text = picked;
+                TxtFind.Focus();
+                TxtFind.SelectAll();
+                e.Handled = true;
+            }
         };
+        InitConfigText();
         SetDirty(false);
     }
 
@@ -142,10 +152,11 @@ public partial class MainWindow
         ConfigToolbar.Visibility = Visibility.Visible;
 
         _loadingDoc = true;
+        ConfigEditor.SyntaxHighlighting = ConfigHighlighting.For(file.ZipEntry ?? file.FullPath);
         ConfigEditor.Text = _doc.Text;
         ConfigEditor.IsEnabled = true;
         ConfigEditor.ScrollToHome();
-        ConfigEditor.CaretIndex = 0;
+        ConfigEditor.CaretOffset = 0;
         _loadingDoc = false;
 
         // the grid is offered when the format is understood and the file has settings in it
@@ -292,21 +303,11 @@ public partial class MainWindow
         BtnConfigSave.IsEnabled = BtnConfigRevert.IsEnabled = dirty;
     }
 
-    void ConfigEditor_TextChanged(object sender, TextChangedEventArgs e)
+    void ConfigEditor_TextChanged(object? sender, EventArgs e)
     {
+        if (TxtFind.Text.Length > 0) UpdateFind(jump: false);
         if (_loadingDoc || _doc == null || _formMode) return;
         UpdateDirty();
-    }
-
-    void ConfigEditor_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Tab && Keyboard.Modifiers == ModifierKeys.None)
-        {
-            // YAML doesn't allow tabs, so Tab inserts two spaces
-            ConfigEditor.SelectedText = "  ";
-            ConfigEditor.Select(ConfigEditor.SelectionStart + 2, 0);
-            e.Handled = true;
-        }
     }
 
     // ------------------------------------------------------------ save / revert

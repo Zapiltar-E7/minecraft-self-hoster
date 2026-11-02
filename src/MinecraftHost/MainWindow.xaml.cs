@@ -430,6 +430,7 @@ public partial class MainWindow : Window
         UpdateProfileButton();
         _tray?.SetTip($"{TitleText.Text}: {StatusText.Text}" + (_state == ServerState.Running ? $", {_players.Count} online" : ""));
         RefreshConnectionsIfShown();
+        RefreshWorldsIfShown();
         RefreshPlayerLists();
         UpdateAddonControls();
     }

@@ -9,7 +9,7 @@
     <RootNamespace>MinecraftHost</RootNamespace>
     <AssemblyName>MinecraftHost</AssemblyName>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>1.0.9</Version>
+    <Version>1.0.10</Version>
     <Product>Minecraft Self-Hoster</Product>
 
     <!-- one self-contained exe: no .NET install needed on the PC -->
@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
     <PackageReference Include="NVorbis" Version="0.10.5" />
   </ItemGroup>
 

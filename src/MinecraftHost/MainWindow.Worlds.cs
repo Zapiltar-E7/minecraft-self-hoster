@@ -29,11 +29,23 @@ public partial class MainWindow
         return name == level || name == level + "_nether" || name == level + "_the_end";
     }
 
+    string _worldsShown = "";
+
+    /// <summary>Rebuilds the open Worlds page when the server starts or stops, so its buttons follow without leaving the page.</summary>
+    void RefreshWorldsIfShown()
+    {
+        var shown = $"{_state}|{_server?.IsRunning == true}|{_busy > 0}";
+        if (WorldsPage?.Visibility != Visibility.Visible || shown == _worldsShown) return;
+        RefreshWorlds();
+    }
+
     void RefreshWorlds()
     {
         if (WorldRows == null) return;
+        _worldsShown = $"{_state}|{_server?.IsRunning == true}|{_busy > 0}";
         WorldRows.Children.Clear();
         GroupRows.Children.Clear();
+        TravelRows.Children.Clear();
         if (!Multiverse.HasCore)
         {
             var find = new Button { Padding = new Thickness(12, 6, 12, 6), FontWeight = FontWeights.Normal, Content = IconText("", "Multiverse-Core") };
@@ -41,6 +53,7 @@ public partial class MainWindow
             WorldRows.Children.Add(new SettingRow { Icon = "", Title = "Multiverse-Core isn't installed", Hint = "It lets the server have more worlds than the usual three. Drop its jar on the window to install it.", Content = find });
             WorldsHint.Text = "";
             GroupsCard.Visibility = Visibility.Collapsed;
+            TravelCard.Visibility = Visibility.Collapsed;
             return;
         }
 
@@ -72,6 +85,7 @@ public partial class MainWindow
         create.Click += (_, _) => _ = CreateWorldAsync(groups);
         WorldRows.Children.Add(new SettingRow { Icon = "", Title = "Create a world", Hint = "Normal, flat, nether or end, with any seed", Content = create });
 
+        BuildTravelRows(live);
         GroupsCard.Visibility = Multiverse.HasInventories ? Visibility.Visible : Visibility.Collapsed;
         foreach (var g in groups)
         {
@@ -85,7 +99,7 @@ public partial class MainWindow
             {
                 Icon = "",
                 Title = g.Name,
-                Hint = (g.Worlds.Count == 0 ? "No worlds" : string.Join(", ", g.Worlds)) + " · shares " + shares,
+                Hint = (g.Worlds.Count == 0 ? "No worlds" : string.Join(", ", g.Worlds)) + " · shares " + shares + " · " + ReturnLabel(g.Return).ToLowerInvariant(),
                 Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { edit, delete } },
             });
         }
@@ -93,6 +107,51 @@ public partial class MainWindow
         System.Windows.Automation.AutomationProperties.SetName(newGroup, "Create a world group");
         newGroup.Click += (_, _) => _ = EditGroupAsync(null, worlds);
         GroupRows.Children.Add(new SettingRow { Icon = "", Title = "Create a world group", Hint = "Worlds in a group share inventories and more", Content = newGroup });
+    }
+
+    static string ReturnLabel(ReturnTo r) => r switch
+    {
+        ReturnTo.GroupSpot => "Back where they were in this group",
+        ReturnTo.WorldSpot => "Back where they were in each world",
+        _ => "At the world's spawn",
+    };
+
+    /// <summary>
+    /// When players change worlds: Multiverse-Inventories' last location (players return to where they left off) and
+    /// Multiverse-Core's respawn rule. Each switch sends its command straight away.
+    /// </summary>
+    void BuildTravelRows(bool live)
+    {
+        TravelCard.Visibility = Multiverse.HasCore ? Visibility.Visible : Visibility.Collapsed;
+        var lastOn = Multiverse.LastLocationOn();
+        SettingRow Row(string icon, string title, string hint, bool on, bool enabled, Func<bool, string> command)
+        {
+            var sw = new CheckBox { Style = (Style)FindResource("RowSwitch"), IsChecked = on, IsEnabled = enabled };
+            System.Windows.Automation.AutomationProperties.SetName(sw, title);
+            RoutedEventHandler changed = (_, _) =>
+            {
+                var value = sw.IsChecked == true;
+                if (value == on) return;
+                _ = RunMvAsync("Saving...", async () => Check(await MvAsync(command(value))));
+            };
+            sw.Checked += changed;
+            sw.Unchecked += changed;
+            return new SettingRow { Icon = icon, Title = title, Hint = hint, Content = sw };
+        }
+        if (Multiverse.HasInventories)
+        {
+            TravelRows.Children.Add(Row("\uE7C1", "Return players to where they left off",
+                "Coming back to a world, they arrive where they were instead of at its spawn. Each group can choose (below).",
+                lastOn, live, _ => "mvinv toggle last_location"));
+            TravelRows.Children.Add(Row("\uE8AB", "For every teleport", "Off: only with /mv tp ll:<world>",
+                Multiverse.LastLocationForAllTeleports, live && lastOn, v => $"mvinv config apply-last-location-for-all-teleports {v.ToString().ToLowerInvariant()}"));
+            TravelRows.Children.Add(Row("\uE7BA", "Forget the spot when a player dies", "So they don't come back to where they died",
+                Multiverse.LastLocationResetOnDeath, live && lastOn, v => $"mvinv config reset-last-location-on-death {v.ToString().ToLowerInvariant()}"));
+            TravelRows.Children.Add(Row("\uE909", "Worlds not in a group remember too", "Each one keeps its own spot",
+                Multiverse.LastLocationUngrouped, live && lastOn, v => $"mvinv config use-optionals-for-ungrouped-worlds {v.ToString().ToLowerInvariant()}"));
+        }
+        TravelRows.Children.Add(Row("\uE945", "Respawn in the overworld after dying in the nether or end", "Like vanilla Minecraft. Off: they respawn in the same world.",
+            Multiverse.RespawnInOverworld, live, v => $"mv config default-respawn-in-overworld {v.ToString().ToLowerInvariant()}"));
     }
 
     Button SmallIcon(string glyph, string tip, bool enabled, Action click)
@@ -350,6 +409,10 @@ public partial class MainWindow
         }).ToList();
         var shared = existing == null ? Multiverse.Shares.Select(s => s.Id).ToHashSet() : Multiverse.SharedIds(existing.Shares);
         var shareBoxes = Multiverse.Shares.Select(s => { var b = Toggle(s.Label, shared.Contains(s.Id)); b.Tag = s.Id; return b; }).ToList();
+        var returnTo = new ComboBox { Width = 300, HorizontalAlignment = HorizontalAlignment.Left };
+        foreach (var r in new[] { ReturnTo.GroupSpot, ReturnTo.WorldSpot, ReturnTo.Spawn }) returnTo.Items.Add(new ComboBoxItem { Content = ReturnLabel(r), Tag = r });
+        returnTo.SelectedIndex = (int)(existing?.Return ?? ReturnTo.GroupSpot);
+        System.Windows.Automation.AutomationProperties.SetName(returnTo, "When players come back");
 
         var save = ShowOverlay(close =>
         {
@@ -370,6 +433,10 @@ public partial class MainWindow
             foreach (var b in shareBoxes) s.Children.Add(b);
             panel.Children.Add(s);
             panel.Children.Add(new TextBlock { Text = "Anything not shared is kept separately for each group: a player's survival inventory stays out of creative worlds.", FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Foreground = Res("Muted"), Margin = new Thickness(0, 10, 0, 0) });
+            panel.Children.Add(Label("When players come back to these worlds", 16));
+            panel.Children.Add(returnTo);
+            if (!Multiverse.LastLocationOn())
+                panel.Children.Add(new TextBlock { Text = "Returning to where they left off is switched off for the whole server (When players change worlds), so they arrive at spawn either way.", FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Foreground = Res("WarnText"), Margin = new Thickness(0, 6, 0, 0) });
             panel.Children.Add(ButtonRow(new (string, Func<object?>, bool)[]
             {
                 ("Cancel", () => null, true),
@@ -391,6 +458,7 @@ public partial class MainWindow
         var group = existing?.Name ?? name.Text.Trim();
         var wantWorlds = worldBoxes.Where(b => b.IsChecked == true).Select(b => (string)b.Tag).ToList();
         var wantShares = shareBoxes.Where(b => b.IsChecked == true).Select(b => (string)b.Tag).ToHashSet();
+        var wantReturn = (ReturnTo)((ComboBoxItem)returnTo.SelectedItem).Tag;
         await RunMvAsync($"Saving group {group}...", async () =>
         {
             if (existing == null) Check(await MvAsync($"mvinv create-group {group}"));
@@ -404,15 +472,25 @@ public partial class MainWindow
             if (add.Count > 0) Check(await MvAsync($"mvinv add-worlds {group} {string.Join(",", add)}"));
             if (remove.Count > 0) Check(await MvAsync($"mvinv remove-worlds {group} {string.Join(",", remove)}"));
             var before = existing == null ? new HashSet<string>() : Multiverse.SharedIds(existing.Shares);
-            if (!before.SetEquals(wantShares))
+            var hadReturn = existing?.Return ?? ReturnTo.WorldSpot;
+            // last location is a share too: shared, all the group's worlds have one remembered spot
+            var shareSpot = wantReturn == ReturnTo.GroupSpot;
+            if (!before.SetEquals(wantShares) || (hadReturn == ReturnTo.GroupSpot) != shareSpot)
             {
                 // start from nothing, then share what's ticked (handles "all" and the long share names alike)
                 if (existing != null && existing.Shares.Count > 0) await MvAsync($"mvinv remove-shares {group} {string.Join(",", existing.Shares)}");
-                if (wantShares.Count == Multiverse.Shares.Length) Check(await MvAsync($"mvinv add-shares {group} all"));
-                // the exact share names, not Multiverse's short ones ("inventory" would bring the ender chest along too)
-                else if (wantShares.Count > 0)
-                    Check(await MvAsync($"mvinv add-shares {group} {string.Join(",", Multiverse.Shares.Where(x => wantShares.Contains(x.Id)).SelectMany(x => x.Parts))}"));
+                if (wantShares.Count == Multiverse.Shares.Length && shareSpot) Check(await MvAsync($"mvinv add-shares {group} all"));
+                else
+                {
+                    // the exact share names, not Multiverse's short ones ("inventory" would bring the ender chest along too)
+                    var parts = Multiverse.Shares.Where(x => wantShares.Contains(x.Id)).SelectMany(x => x.Parts).ToList();
+                    if (shareSpot) parts.Add("last_location");
+                    if (parts.Count > 0) Check(await MvAsync($"mvinv add-shares {group} {string.Join(",", parts)}"));
+                }
             }
+            // back at spawn: last location switched off for this group (it wins over sharing)
+            if (wantReturn == ReturnTo.Spawn && hadReturn != ReturnTo.Spawn) Check(await MvAsync($"mvinv add-disabled-shares {group} last_location"));
+            if (wantReturn != ReturnTo.Spawn && hadReturn == ReturnTo.Spawn) Check(await MvAsync($"mvinv remove-disabled-shares {group} last_location"));
         });
     }
 

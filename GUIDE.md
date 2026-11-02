@@ -111,7 +111,7 @@ Sub-tabs at the top sort the files, each showing how many it has:
 Search within a sub-tab, then click a file to edit it.
 
 - **Settings view (default):** every setting is a row. The name and its description, taken from the file's own comments, are on the left; the value is on the right. True/false settings are switches and everything else is a text box. Rows are grouped under section headings that follow the file's nesting (for example `world › spawning`). **Filter settings...** narrows the rows, and changed rows are outlined in amber.
-- **Text view:** the raw file. Use it for lists and anything else the grid can't show. You can switch between the two at any time, and edits carry over.
+- **Text view:** the raw file, with code colours (keys, values, strings, numbers, true/false and comments) and line numbers. Use it for lists and anything else the grid can't show. **Find** (Ctrl+F) marks every match; Enter and Shift+Enter go to the next and previous. You can switch between the two views at any time, and edits carry over.
 - **Saving keeps your file intact.** Only the values you changed are rewritten. Comments, ordering and spacing stay exactly as they were. JSON files have no comments, so they are rewritten neatly formatted.
 - **Supported formats:** YAML (`.yml`), `.properties`, JSON, HOCON (`.conf`, e.g. BlueMap), and TOML/INI. Plain `.txt` files open as text.
 - **Save** (or Ctrl+S) checks the file first. It flags broken JSON and YAML indented with tabs. In the Text view, Tab types two spaces.
@@ -153,6 +153,8 @@ With **Multiverse-Core** installed, the **Worlds** page manages the server's wor
 
 - **Worlds:** each shows its type, game mode, difficulty and group. **Edit** changes its display name (`&` colour codes work), game mode, difficulty, PVP, flight, hunger, weather, whether it's hidden or loaded at start, and a player limit. **Delete** asks first and offers to back up the worlds; players in it are moved out. The server's main world, nether and end can't be deleted here.
 - **Create a world:** a name, the type (Overworld, Nether or The End), the terrain (normal, flat, large biomes or amplified), a seed (or a random one), structures on or off, game mode, difficulty, and a group to put it in.
+- **When players change worlds:** whether players return to where they left off (Multiverse-Inventories' last location), whether that applies to every teleport or only `/mv tp ll:<world>`, whether dying forgets the spot, whether worlds outside a group remember too, and whether players respawn in the overworld after dying in the nether or end.
+- **Each group's return:** in the group editor, **When players come back to these worlds**: back where they were anywhere in the group, back where they were in each world, or at the world's spawn (good for a hub).
 - **World groups:** worlds in a group share what you tick: inventory, ender chest, experience, health, hunger, potion effects, where they were, respawn point, advancements, statistics and recipes. Anything not shared is kept apart per group, so a survival inventory stays out of creative worlds. A world is in one group at a time; adding it to a group takes it out of its old one.
 
 ## Announcements
