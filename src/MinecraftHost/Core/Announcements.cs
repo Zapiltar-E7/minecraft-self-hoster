@@ -14,6 +14,8 @@ public sealed record Announcement
     public bool Enabled { get; init; } = true;
     /// <summary>Skip it while nobody is online, so an empty server's log isn't filled with it.</summary>
     public bool OnlyWithPlayers { get; init; } = true;
+    /// <summary>"left", "center" or "right": chat has no alignment, so each line is moved over with spaces (Announcements.Pad).</summary>
+    public string Align { get; init; } = "left";
 }
 
 /// <summary>Turns an announcement into the tellraw command that posts it, the map link clickable.</summary>
@@ -141,34 +143,80 @@ public static class Announcements
     /// line breaks reach the console escaped inside the JSON (still one command). <paramref name="newClickFormat"/>:
     /// Minecraft 1.21.5 and later spell a link's click action differently.
     /// </summary>
-    public static string? Command(string text, Func<string, string?> value, bool newClickFormat)
+    public static string? Command(string text, Func<string, string?> value, bool newClickFormat, string align = "left")
     {
-        var parts = new List<string> { "\"\"" };
+        // the pieces with their placeholders filled in, split at line breaks so each line can be moved over on its own
+        var lines = new List<List<(Piece P, string Shown)>> { new() };
         foreach (var p in Parse(text))
         {
-            var shown = p.Text;
-            if (p.Token != null && value(p.Token) is not { Length: > 0 } v) return null;
-            else if (p.Token != null) shown = value(p.Token)!;
-            var c = new Dictionary<string, object> { ["text"] = shown };
-            if (p.Color != null) c["color"] = p.Color.StartsWith('#') ? p.Color : ColorNames[p.Color[0]];
-            if (p.Bold) c["bold"] = true;
-            if (p.Italic) c["italic"] = true;
-            if (p.Underline) c["underlined"] = true;
-            if (p.Strike) c["strikethrough"] = true;
-            if (p.Obfuscated) c["obfuscated"] = true;
-            if (p.Token == "map")
+            if (p.Token != null && value(p.Token) is not { Length: > 0 }) return null;
+            var shown = p.Token != null ? value(p.Token)! : p.Text;
+            var bits = p.Token != null ? new[] { shown } : shown.Split('\n');
+            for (var b = 0; b < bits.Length; b++)
             {
-                // the link: aqua and underlined unless a colour was chosen for it, and clickable
-                c.TryAdd("color", "aqua");
-                c["underlined"] = true;
-                c[newClickFormat ? "click_event" : "clickEvent"] = newClickFormat
-                    ? new Dictionary<string, string> { ["action"] = "open_url", ["url"] = shown }
-                    : new Dictionary<string, string> { ["action"] = "open_url", ["value"] = shown };
+                if (b > 0) lines.Add(new());
+                if (bits[b].Length > 0) lines[^1].Add((p, bits[b]));
             }
-            parts.Add(JsonSerializer.Serialize(c, Json));
+        }
+        var parts = new List<string> { "\"\"" };
+        for (var l = 0; l < lines.Count; l++)
+        {
+            if (l > 0) parts.Add(JsonSerializer.Serialize(new Dictionary<string, object> { ["text"] = "\n" }, Json));
+            var pad = Pad(lines[l].Select(x => (x.Shown, x.P.Bold)), align);
+            if (pad.Length > 0) parts.Add(JsonSerializer.Serialize(new Dictionary<string, object> { ["text"] = pad }, Json));
+            foreach (var (p, shown) in lines[l]) parts.Add(Component(p, shown, newClickFormat));
         }
         return "tellraw @a [" + string.Join(",", parts) + "]";
     }
+
+    static string Component(Piece p, string shown, bool newClickFormat)
+    {
+        var c = new Dictionary<string, object> { ["text"] = shown };
+        if (p.Color != null) c["color"] = p.Color.StartsWith('#') ? p.Color : ColorNames[p.Color[0]];
+        if (p.Bold) c["bold"] = true;
+        if (p.Italic) c["italic"] = true;
+        if (p.Underline) c["underlined"] = true;
+        if (p.Strike) c["strikethrough"] = true;
+        if (p.Obfuscated) c["obfuscated"] = true;
+        if (p.Token == "map")
+        {
+            // the link: aqua and underlined unless a colour was chosen for it, and clickable
+            c.TryAdd("color", "aqua");
+            c["underlined"] = true;
+            c[newClickFormat ? "click_event" : "clickEvent"] = newClickFormat
+                ? new Dictionary<string, string> { ["action"] = "open_url", ["url"] = shown }
+                : new Dictionary<string, string> { ["action"] = "open_url", ["value"] = shown };
+        }
+        return JsonSerializer.Serialize(c, Json);
+    }
+
+    // the chat's width in the font's pixels at the default chat width setting; a player's own narrower or wider chat moves it.
+    // Centring is the Announcement plugin's <centered> tag's way, so messages line up the same as with it.
+    const int ChatWidth = 320;
+
+    /// <summary>Spaces that move a line to the middle or the right of chat (none for left, or when it's too long to move).</summary>
+    public static string Pad(IEnumerable<(string Text, bool Bold)> line, string align)
+    {
+        if (align is not ("center" or "right")) return "";
+        // each letter's width and the pixel after it, and one more for each bold letter (spaces too)
+        var width = line.Sum(x => x.Text.Sum(ch => CharWidth(ch) + (x.Bold ? 1 : 0)));
+        var space = CharWidth(' ');
+        if (align == "right")   // whole spaces only, so the line never runs over and wraps
+            return ChatWidth - width > 0 ? new string(' ', (ChatWidth - width) / space) : "";
+        var half = (ChatWidth - width) / 2;
+        return half > 0 ? new string(' ', (half + space - 1) / space) : "";   // spaces until half the room is filled
+    }
+
+    /// <summary>A letter's width in Minecraft's chat font, the pixel after it included.</summary>
+    static int CharWidth(char c) => c switch
+    {
+        '!' or '\'' or ',' or '.' or ':' or ';' or '|' or 'i' or 'ı' => 2,
+        '`' or 'l' => 3,
+        ' ' or '"' or '(' or ')' or '*' or 'I' or '[' or ']' or 't' or '{' or '}' or 'İ' => 4,
+        '<' or '>' or 'f' or 'k' => 5,
+        '@' => 7,
+        _ => 6,
+    };
 
     /// <summary>A piece's colour for showing it on screen ("#RRGGBB"), chat's white when it has none.</summary>
     public static string Hex(string? color) =>

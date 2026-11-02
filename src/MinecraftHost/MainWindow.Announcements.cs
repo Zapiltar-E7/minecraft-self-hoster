@@ -54,7 +54,7 @@ public partial class MainWindow
 
     bool SendAnnouncement(Announcement a, HostConfig config)
     {
-        var command = Announcements.Command(a.Text, name => AnnounceValue(name, config), Announcements.NewClickFormat(config.Version));
+        var command = Announcements.Command(a.Text, name => AnnounceValue(name, config), Announcements.NewClickFormat(config.Version), a.Align);
         if (command == null)
         {
             if (_announceSkipNoted.Add(a.Id)) Log.Host($"Skipped an announcement: {Short(a.Text)} has {{map}}, but the web map has no link right now.");
@@ -202,9 +202,11 @@ public partial class MainWindow
         // what players see, styled like chat: always dark, the colours are Minecraft's, not the theme's
         var preview = new TextBlock { TextWrapping = TextWrapping.Wrap, FontFamily = (FontFamily)FindResource("Mono"), FontSize = 12, Foreground = Brushes.White };
         var previewBox = new Border { Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x1F, 0x22)), CornerRadius = new CornerRadius(7), Padding = new Thickness(10, 8, 10, 8), Margin = new Thickness(0, 4, 0, 0), Child = preview };
+        var align = a.Align;
         void Preview()
         {
             var config = HostConfig.LoadOrNew();
+            preview.TextAlignment = align switch { "center" => TextAlignment.Center, "right" => TextAlignment.Right, _ => TextAlignment.Left };
             preview.Inlines.Clear();
             if (box.Text.Trim().Length == 0) { preview.Inlines.Add(new System.Windows.Documents.Run("(nothing yet)") { Foreground = Brushes.Gray }); return; }
             foreach (var p in Announcements.Parse(box.Text))
@@ -292,6 +294,22 @@ public partial class MainWindow
             box.Focus();
         };
         tools.Children.Add(gradient);
+        // alignment, for the whole message: chat has none, so lines are moved over with spaces when sent
+        var alignChips = new List<RadioButton>();
+        foreach (var (id, glyph, tip) in new[] { ("left", "", "Align left"), ("center", "", "Centre"), ("right", "", "Align right") })
+        {
+            var chip = new RadioButton
+            {
+                Style = (Style)FindResource("FilterChip"), GroupName = "announce-align-" + a.Id, IsChecked = id == align, Tag = id,
+                Content = new TextBlock { Text = glyph, FontFamily = (FontFamily)FindResource("Icons"), FontSize = 12 },
+                Margin = new Thickness(id == "left" ? 6 : 0, 0, 2, 4), Padding = new Thickness(0),
+                ToolTip = tip + (id == "left" ? "" : " (lined up for the default chat width; a narrower or wider chat moves it)"),
+            };
+            System.Windows.Automation.AutomationProperties.SetName(chip, tip);
+            chip.Checked += (_, _) => { align = (string)chip.Tag; Preview(); };
+            alignChips.Add(chip);
+            tools.Children.Add(chip);
+        }
         foreach (var (code, label, tip) in new[]
         {
             ('l', "B", "Bold"), ('o', "I", "Italic"), ('n', "U", "Underline"), ('m', "S", "Strikethrough"),
@@ -344,12 +362,13 @@ public partial class MainWindow
         sendNow.Click += (_, _) =>
         {
             if (box.Text.Trim().Length == 0) return;
-            sent.Text = SendAnnouncement(a with { Text = box.Text }, HostConfig.LoadOrNew()) ? "Sent." : "Not sent: the map has no link right now.";
+            sent.Text = SendAnnouncement(a with { Text = box.Text, Align = align }, HostConfig.LoadOrNew()) ? "Sent." : "Not sent: the map has no link right now.";
         };
 
         Announcement? Result() => box.Text.Trim().Length == 0 ? null : a with
         {
             Text = box.Text.Trim(),
+            Align = align,
             EveryMinutes = (int)((ComboBoxItem)every.SelectedItem).Tag,
             OnlyWithPlayers = players.IsChecked == true,
         };
