@@ -42,7 +42,7 @@ public partial class MainWindow : Window
         Themes.Changed += () => { DarkTitleBar.Apply(this); UpdateView(); RefreshThemedCards(); };
         // the open page's highlight and the open section's underline slide to the one picked
         Motion.Track(NavMarker, NavLayer, NavButtons, underline: false);
-        Motion.Track(SecMarker, SecLayer, new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep, SecAnnounce }, underline: true);
+        Motion.Track(SecMarker, SecLayer, new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep, SecAnnounce, SecWorlds, SecCommands }, underline: true);
         Motion.Track(CfgMarker, CfgLayer, new[] { CfgServer, CfgPlugins, CfgDatapacks, CfgMods }, underline: true);
         _logTimer.Tick += (_, _) => DrainLog();
         _logTimer.Start();
@@ -129,7 +129,7 @@ public partial class MainWindow : Window
     int _navIndex;   // the open sidebar button, so the next page slides in from the side it's on
 
     /// <summary>The sidebar's page buttons, top to bottom.</summary>
-    RadioButton[] NavButtons => new[] { TabServer, TabWorlds, TabLog, TabConnections, TabAddons, TabMods, TabConfigs, TabTools, TabSettings };
+    RadioButton[] NavButtons => new[] { TabServer, TabLog, TabConnections, TabAddons, TabMods, TabConfigs, TabTools, TabSettings };
     string? _iconShown;
 
     /// <summary>The header icon: the current server's server-icon.png (what players see in their server list), else the creeper.</summary>
@@ -165,7 +165,7 @@ public partial class MainWindow : Window
 
     void Tab_Checked(object sender, RoutedEventArgs e)
     {
-        if (ServerPage == null || ConfigPage == null || AddonsPage == null || ToolsPage == null || LogPage == null || SettingsPage == null || ConnectionsPage == null || WorldsPage == null) return;   // fires during InitializeComponent
+        if (ServerPage == null || ConfigPage == null || AddonsPage == null || ToolsPage == null || LogPage == null || SettingsPage == null || ConnectionsPage == null) return;   // fires during InitializeComponent
         var configs = TabConfigs.IsChecked == true;
         var plugins = TabAddons.IsChecked == true;
         var mods = TabMods.IsChecked == true;
@@ -174,10 +174,7 @@ public partial class MainWindow : Window
         var log = TabLog.IsChecked == true;
         var settings = TabSettings.IsChecked == true;
         var connections = TabConnections.IsChecked == true;
-        var worlds = TabWorlds.IsChecked == true;
-        ServerPage.Visibility = !configs && !addons && !tools && !log && !settings && !connections && !worlds ? Visibility.Visible : Visibility.Collapsed;
-        WorldsPage.Visibility = worlds ? Visibility.Visible : Visibility.Collapsed;
-        if (worlds) RefreshWorlds();
+        ServerPage.Visibility = !configs && !addons && !tools && !log && !settings && !connections ? Visibility.Visible : Visibility.Collapsed;
         ConnectionsPage.Visibility = connections ? Visibility.Visible : Visibility.Collapsed;
         if (connections) _ = OpenConnectionsTabAsync();
         SettingsPage.Visibility = settings ? Visibility.Visible : Visibility.Collapsed;
@@ -186,14 +183,14 @@ public partial class MainWindow : Window
         ToolsPage.Visibility = tools ? Visibility.Visible : Visibility.Collapsed;
         LogPage.Visibility = log ? Visibility.Visible : Visibility.Collapsed;
         PageTitle.Text = configs ? "Configs" : plugins ? "Plugins" : mods ? "Mods" : tools ? "Tools" : log ? "Logs"
-                       : settings ? "Settings" : connections ? "Connections" : worlds ? "Worlds" : "Server";
+                       : settings ? "Settings" : connections ? "Connections" : "Server";
         // the new page (and its title) slides in from the side of the sidebar it was picked towards
         var index = Array.IndexOf(NavButtons, sender);
         if (index >= 0 && index != _navIndex)
         {
             var dy = index > _navIndex ? 14 : -14;
             _navIndex = index;
-            foreach (var page in new UIElement[] { ServerPage, ConnectionsPage, SettingsPage, ConfigPage, AddonsPage, ToolsPage, LogPage, WorldsPage })
+            foreach (var page in new UIElement[] { ServerPage, ConnectionsPage, SettingsPage, ConfigPage, AddonsPage, ToolsPage, LogPage })
                 if (page.Visibility == Visibility.Visible) { _shownPage = page; Motion.PageIn(page, 0, dy); }
             Motion.PageIn(PageTitle, 0, dy / 2);
         }
@@ -217,6 +214,8 @@ public partial class MainWindow : Window
     {
         if (ServerCol0 == null) return;   // fires during InitializeComponent
         LayoutServerCards(animate: true);
+        if (SecWorlds.IsChecked == true) RefreshWorlds();
+        if (SecCommands.IsChecked == true) RefreshCommands();
     }
 
     bool? _serverTwo;
@@ -225,11 +224,11 @@ public partial class MainWindow : Window
     void LayoutServerCards(bool animate)
     {
         var section = SecPlayers.IsChecked == true ? SecPlayers : SecWorld.IsChecked == true ? SecWorld : SecUpkeep.IsChecked == true ? SecUpkeep
-            : SecAnnounce.IsChecked == true ? SecAnnounce : SecGeneral;
+            : SecAnnounce.IsChecked == true ? SecAnnounce : SecWorlds.IsChecked == true ? SecWorlds : SecCommands.IsChecked == true ? SecCommands : SecGeneral;
         var two = false;   // one column of panels (mockup B)
         if (two == _serverTwo && section == _serverLaidOut) return;
         var changed = section != _serverLaidOut;
-        var sections = new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep, SecAnnounce };
+        var sections = new[] { SecGeneral, SecPlayers, SecWorld, SecUpkeep, SecAnnounce, SecWorlds, SecCommands };
         var dx = _serverLaidOut == null || Array.IndexOf(sections, section) > Array.IndexOf(sections, _serverLaidOut) ? 18 : -18;
         _serverTwo = two;
         _serverLaidOut = section;
@@ -237,8 +236,10 @@ public partial class MainWindow : Window
             : section == SecWorld ? (new FrameworkElement[] { ListingCard }, new FrameworkElement[] { GameplayCard })
             : section == SecUpkeep ? (new FrameworkElement[] { RestartCard }, new FrameworkElement[] { BackupCard })
             : section == SecAnnounce ? (new FrameworkElement[] { AnnounceCard }, Array.Empty<FrameworkElement>())
+            : section == SecWorlds ? (new FrameworkElement[] { WorldsSection }, Array.Empty<FrameworkElement>())
+            : section == SecCommands ? (new FrameworkElement[] { CommandsSection }, Array.Empty<FrameworkElement>())
             : (new FrameworkElement[] { SoftwareCard }, new FrameworkElement[] { MemoryCard, FolderCard });
-        foreach (var card in new FrameworkElement[] { SoftwareCard, MemoryCard, FolderCard, PlayersCard, WeekCard, WhitelistCard, OpsCard, ListingCard, GameplayCard, RestartCard, BackupCard, AnnounceCard })
+        foreach (var card in new FrameworkElement[] { SoftwareCard, MemoryCard, FolderCard, PlayersCard, WeekCard, WhitelistCard, OpsCard, ListingCard, GameplayCard, RestartCard, BackupCard, AnnounceCard, WorldsSection, CommandsSection })
             (card.Parent as Panel)?.Children.Remove(card);
         foreach (var card in left) ServerCol0.Children.Add(card);
         foreach (var card in right) (two ? ServerCol1 : ServerCol0).Children.Add(card);

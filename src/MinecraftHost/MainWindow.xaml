@@ -140,13 +140,6 @@
             <TextBlock Text="Server"/>
           </StackPanel>
         </RadioButton>
-        <RadioButton x:Name="TabWorlds" Style="{StaticResource NavButton}" GroupName="Tabs" Checked="Tab_Checked"
-                     ToolTip="Multiverse worlds and world groups">
-          <StackPanel Orientation="Horizontal">
-            <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE909;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-            <TextBlock Text="Worlds"/>
-          </StackPanel>
-        </RadioButton>
         <RadioButton x:Name="TabLog" Style="{StaticResource NavButton}" GroupName="Tabs" Checked="Tab_Checked">
           <StackPanel Orientation="Horizontal">
             <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE9D9;" VerticalAlignment="Center" Margin="0,1,8,0"/>
@@ -238,7 +231,7 @@
           <RadioButton x:Name="SecWorld" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="How the server looks in the multiplayer list, and gameplay settings">
             <StackPanel Orientation="Horizontal">
               <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE909;" VerticalAlignment="Center" Margin="0,1,8,0"/>
-              <TextBlock Text="World"/>
+              <TextBlock Text="Gameplay"/>
             </StackPanel>
           </RadioButton>
           <RadioButton x:Name="SecUpkeep" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="Automatic backups, scheduled restarts and crash recovery">
@@ -251,6 +244,18 @@
             <StackPanel Orientation="Horizontal">
               <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE789;" VerticalAlignment="Center" Margin="0,1,8,0"/>
               <TextBlock Text="Announcements"/>
+            </StackPanel>
+          </RadioButton>
+          <RadioButton x:Name="SecWorlds" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="Multiverse worlds and world groups">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE909;" VerticalAlignment="Center" Margin="0,1,8,0"/>
+              <TextBlock Text="Worlds"/>
+            </StackPanel>
+          </RadioButton>
+          <RadioButton x:Name="SecCommands" Style="{StaticResource SubTab}" GroupName="ServerSection" Checked="ServerSection_Checked" ToolTip="The Custom Commands plugin's commands">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE756;" VerticalAlignment="Center" Margin="0,1,8,0"/>
+              <TextBlock Text="Commands"/>
             </StackPanel>
           </RadioButton>
         </StackPanel>
@@ -391,6 +396,39 @@
 </StackPanel>
 </Border>
 </StackPanel>
+            <!-- Multiverse's worlds and world groups (MainWindow.Worlds.cs) -->
+            <StackPanel x:Name="WorldsSection">
+        <TextBlock x:Name="WorldsHint" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="2,0,0,12"/>
+        <StackPanel x:Name="WorldsCard" Style="{StaticResource Group}">
+          <TextBlock Style="{StaticResource GroupTitle}" Text="WORLDS"/>
+          <Border Style="{StaticResource GroupPanel}">
+            <StackPanel x:Name="WorldRows"/>
+          </Border>
+        </StackPanel>
+        <StackPanel x:Name="TravelCard" Style="{StaticResource Group}">
+          <TextBlock Style="{StaticResource GroupTitle}" Text="WHEN PLAYERS CHANGE WORLDS"/>
+          <Border Style="{StaticResource GroupPanel}">
+            <StackPanel x:Name="TravelRows"/>
+          </Border>
+        </StackPanel>
+        <StackPanel x:Name="GroupsCard" Style="{StaticResource Group}">
+          <TextBlock Style="{StaticResource GroupTitle}" Text="WORLD GROUPS"/>
+          <Border Style="{StaticResource GroupPanel}">
+            <StackPanel x:Name="GroupRows"/>
+          </Border>
+          <TextBlock Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="4,8,0,0"
+                     Text="From Multiverse-Inventories. Worlds in the same group share what you tick; worlds in different groups keep inventories apart."/>
+        </StackPanel>
+            </StackPanel>
+            <!-- the Custom Commands plugin's commands (MainWindow.Commands.cs) -->
+            <StackPanel x:Name="CommandsSection" Style="{StaticResource Group}">
+              <TextBlock Style="{StaticResource GroupTitle}" Text="CUSTOM COMMANDS"/>
+              <Border Style="{StaticResource GroupPanel}">
+                <StackPanel x:Name="CommandRows"/>
+              </Border>
+              <TextBlock Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="4,8,0,0"
+                         Text="From the Custom Commands plugin. Saving changes only that command in its config.yml (a backup is kept first) and reloads the plugin while the server runs."/>
+            </StackPanel>
             <!-- messages in chat on a schedule (MainWindow.Announcements.cs fills the rows) -->
             <StackPanel x:Name="AnnounceCard" Style="{StaticResource Group}">
               <TextBlock Style="{StaticResource GroupTitle}" Text="ANNOUNCEMENTS"/>
@@ -1018,34 +1056,6 @@
 </StackPanel>
 </Border>
 </StackPanel>
-      </StackPanel>
-    </ScrollViewer>
-
-    <!-- ================= WORLDS TAB ================= -->
-    <!-- Multiverse's worlds and world groups (MainWindow.Worlds.cs) -->
-    <ScrollViewer x:Name="WorldsPage" Grid.Row="3" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-      <StackPanel MaxWidth="900" HorizontalAlignment="Left" Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
-        <TextBlock x:Name="WorldsHint" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="2,0,0,12"/>
-        <StackPanel x:Name="WorldsCard" Style="{StaticResource Group}">
-          <TextBlock Style="{StaticResource GroupTitle}" Text="WORLDS"/>
-          <Border Style="{StaticResource GroupPanel}">
-            <StackPanel x:Name="WorldRows"/>
-          </Border>
-        </StackPanel>
-        <StackPanel x:Name="TravelCard" Style="{StaticResource Group}">
-          <TextBlock Style="{StaticResource GroupTitle}" Text="WHEN PLAYERS CHANGE WORLDS"/>
-          <Border Style="{StaticResource GroupPanel}">
-            <StackPanel x:Name="TravelRows"/>
-          </Border>
-        </StackPanel>
-        <StackPanel x:Name="GroupsCard" Style="{StaticResource Group}">
-          <TextBlock Style="{StaticResource GroupTitle}" Text="WORLD GROUPS"/>
-          <Border Style="{StaticResource GroupPanel}">
-            <StackPanel x:Name="GroupRows"/>
-          </Border>
-          <TextBlock Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="4,8,0,0"
-                     Text="From Multiverse-Inventories. Worlds in the same group share what you tick; worlds in different groups keep inventories apart."/>
-        </StackPanel>
       </StackPanel>
     </ScrollViewer>
 

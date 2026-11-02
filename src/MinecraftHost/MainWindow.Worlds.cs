@@ -35,7 +35,7 @@ public partial class MainWindow
     void RefreshWorldsIfShown()
     {
         var shown = $"{_state}|{_server?.IsRunning == true}|{_busy > 0}";
-        if (WorldsPage?.Visibility != Visibility.Visible || shown == _worldsShown) return;
+        if (ServerPage?.Visibility != Visibility.Visible || SecWorlds?.IsChecked != true || shown == _worldsShown) return;
         RefreshWorlds();
     }
 

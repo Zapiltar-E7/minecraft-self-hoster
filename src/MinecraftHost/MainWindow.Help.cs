@@ -27,7 +27,14 @@ public partial class MainWindow
         var helpStep = new TourStep(() => BtnHelp, "Help is here any time",
             "Every page has its own tour: open a page and press Help. Tools (set up this PC, backups, moving the server), Settings and Info are at the bottom of the sidebar.");
 
-        if (TabWorlds.IsChecked == true) return new()
+        if (TabServer.IsChecked == true && SecCommands.IsChecked == true) return new()
+        {
+            new(() => CommandsSection, "Custom commands",
+                "The Custom Commands plugin's commands. Each one can show a chat message (with colours and clickable links) and run commands as the player or the console. Edit, switch off or delete one, or create a new one at the bottom; saving reloads the plugin."),
+            helpStep,
+        };
+
+        if (TabServer.IsChecked == true && SecWorlds.IsChecked == true) return new()
         {
             new(() => WorldsCard, "Worlds",
                 "Every world Multiverse manages. Edit one's display name, game mode, difficulty and rules, or delete it (the main world, nether and end are protected). Create a world at the bottom: normal, flat, nether or end, with any seed. Changes need the server running."),

@@ -50,9 +50,11 @@ The sidebar holds the server's name, its status and the start and stop buttons, 
 Four sections along the top:
 - **General:** server software and version, memory, launch arguments and the server folder. Pick the **type** (Paper, Fabric, Quilt, Forge, NeoForge or Vanilla) and **Minecraft version**, then install or switch. It warns before a switch that stops plugins or mods loading, or before going to an older version, and offers to back up the worlds first.
 - **Players:** who's online and who was on recently, this week's numbers, the whitelist and operators.
-- **World:** how the server looks in the multiplayer list (message of the day with colours, and the icon), and gameplay settings.
+- **Gameplay:** how the server looks in the multiplayer list (message of the day with colours, and the icon), and gameplay settings.
 - **Backups & restarts:** automatic backups, scheduled restarts with chat warnings, and restarting after a crash.
 - **Announcements:** messages the server posts in chat on a schedule, see **Announcements** below.
+- **Worlds:** Multiverse worlds and world groups, see **Worlds (Multiverse)** below.
+- **Commands:** the Custom Commands plugin's commands, see **Custom commands** below.
 
 ### Tools
 
@@ -149,13 +151,20 @@ If the server type can't load mods (Paper, Vanilla) or plugins (Fabric, Quilt, F
 
 ## Worlds (Multiverse)
 
-With **Multiverse-Core** installed, the **Worlds** page manages the server's worlds; with **Multiverse-Inventories**, its world groups too. The page always shows them; changes need the server running, because they go through Multiverse's own commands.
+With **Multiverse-Core** installed, **Server → Worlds** manages the server's worlds; with **Multiverse-Inventories**, its world groups too. The page always shows them; changes need the server running, because they go through Multiverse's own commands.
 
 - **Worlds:** each shows its type, game mode, difficulty and group. **Edit** changes its display name (`&` colour codes work), game mode, difficulty, PVP, flight, hunger, weather, whether it's hidden or loaded at start, and a player limit. **Delete** asks first and offers to back up the worlds; players in it are moved out. The server's main world, nether and end can't be deleted here.
 - **Create a world:** a name, the type (Overworld, Nether or The End), the terrain (normal, flat, large biomes or amplified), a seed (or a random one), structures on or off, game mode, difficulty, and a group to put it in.
 - **When players change worlds:** whether players return to where they left off (Multiverse-Inventories' last location), whether that applies to every teleport or only `/mv tp ll:<world>`, whether dying forgets the spot, whether worlds outside a group remember too, and whether players respawn in the overworld after dying in the nether or end.
 - **Each group's return:** in the group editor, **When players come back to these worlds**: back where they were anywhere in the group, back where they were in each world, or at the world's spawn (good for a hub).
 - **World groups:** worlds in a group share what you tick: inventory, ender chest, experience, health, hunger, potion effects, where they were, respawn point, advancements, statistics and recipes. Anything not shared is kept apart per group, so a survival inventory stays out of creative worlds. A world is in one group at a time; adding it to a group takes it out of its old one.
+
+## Custom commands
+
+With the **Custom Commands** plugin installed, **Server → Commands** lists its commands, each with what it does, an on/off switch, **Edit** and **Delete**.
+
+- **Editing a command:** its name and other names, the description shown in `/help`, the permission players need, a cooldown, the **chat message** (one line each, with the same colour and style buttons as announcements, a **Link** button for the plugin's `(Text)[<URL>]` links, and a preview of how it looks in chat), the **commands to run** (one per line; `{player}` is the player's name) and whether the player or the console runs them, and its **subcommands**.
+- **Saving** backs up the plugin's `config.yml` and changes only that command's lines, so comments and anything the editor doesn't show (like argument rules) stay as they are. While the server runs, the plugin is reloaded straight away.
 
 ## Announcements
 
