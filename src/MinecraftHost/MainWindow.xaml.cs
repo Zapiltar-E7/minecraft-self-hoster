@@ -212,32 +212,42 @@ public partial class MainWindow : Window
 
     void ServerSection_Checked(object sender, RoutedEventArgs e)
     {
-        if (ServerCol0 == null) return;   // fires during InitializeComponent
+        if (ServerCol0 == null || AnnounceCard == null) return;   // fires during InitializeComponent
         LayoutServerCards(animate: true);
-        if (SecManage.IsChecked == true) { RefreshWorlds(); RefreshCommands(); }
+        if (SecManage.IsChecked != true) return;
+        if (ManageWorlds.IsChecked == true) RefreshWorlds();
+        else if (ManageCommands.IsChecked == true) RefreshCommands();
     }
 
     bool? _serverTwo;
-    RadioButton? _serverLaidOut;
+    RadioButton? _serverLaidOut, _manageLaidOut;
+
+    /// <summary>Manage's open part: Worlds, Custom commands or Announcements.</summary>
+    RadioButton ManagePart => ManageCommands.IsChecked == true ? ManageCommands : ManageAnnounce.IsChecked == true ? ManageAnnounce : ManageWorlds;
 
     void LayoutServerCards(bool animate)
     {
         var section = SecPlayers.IsChecked == true ? SecPlayers : SecWorld.IsChecked == true ? SecWorld : SecUpkeep.IsChecked == true ? SecUpkeep
             : SecManage.IsChecked == true ? SecManage : SecGeneral;
         var two = false;   // one column of panels (mockup B)
-        if (two == _serverTwo && section == _serverLaidOut) return;
-        var changed = section != _serverLaidOut;
+        var part = ManagePart;
+        if (two == _serverTwo && section == _serverLaidOut && (section != SecManage || part == _manageLaidOut)) return;
+        var changed = section != _serverLaidOut || (section == SecManage && part != _manageLaidOut);
         var sections = new[] { SecPlayers, SecGeneral, SecWorld, SecManage, SecUpkeep };
-        var dx = _serverLaidOut == null || Array.IndexOf(sections, section) > Array.IndexOf(sections, _serverLaidOut) ? 18 : -18;
+        var parts = new[] { ManageWorlds, ManageCommands, ManageAnnounce };
+        var dx = section == _serverLaidOut && _manageLaidOut != null
+            ? (Array.IndexOf(parts, part) > Array.IndexOf(parts, _manageLaidOut) ? 18 : -18)   // between Manage's own tabs
+            : _serverLaidOut == null || Array.IndexOf(sections, section) > Array.IndexOf(sections, _serverLaidOut) ? 18 : -18;
         _serverTwo = two;
         _serverLaidOut = section;
+        _manageLaidOut = part;
         var (left, right) = section == SecPlayers ? (new FrameworkElement[] { PlayersCard, WeekCard }, new FrameworkElement[] { WhitelistCard, OpsCard })
             : section == SecWorld ? (new FrameworkElement[] { ListingCard }, new FrameworkElement[] { GameplayCard })
             : section == SecUpkeep ? (new FrameworkElement[] { RestartCard }, new FrameworkElement[] { BackupCard })
-            // Manage: worlds, then custom commands, then announcements, one after another
-            : section == SecManage ? (new FrameworkElement[] { WorldsSection, CommandsSection, AnnounceCard }, Array.Empty<FrameworkElement>())
+            // Manage: its tabs, then the open part
+            : section == SecManage ? (new FrameworkElement[] { ManageTabs, part == ManageCommands ? CommandsSection : part == ManageAnnounce ? AnnounceCard : WorldsSection }, Array.Empty<FrameworkElement>())
             : (new FrameworkElement[] { SoftwareCard }, new FrameworkElement[] { MemoryCard, FolderCard });
-        foreach (var card in new FrameworkElement[] { SoftwareCard, MemoryCard, FolderCard, PlayersCard, WeekCard, WhitelistCard, OpsCard, ListingCard, GameplayCard, RestartCard, BackupCard, AnnounceCard, WorldsSection, CommandsSection })
+        foreach (var card in new FrameworkElement[] { SoftwareCard, MemoryCard, FolderCard, PlayersCard, WeekCard, WhitelistCard, OpsCard, ListingCard, GameplayCard, RestartCard, BackupCard, AnnounceCard, WorldsSection, CommandsSection, ManageTabs })
             (card.Parent as Panel)?.Children.Remove(card);
         foreach (var card in left) ServerCol0.Children.Add(card);
         foreach (var card in right) (two ? ServerCol1 : ServerCol0).Children.Add(card);

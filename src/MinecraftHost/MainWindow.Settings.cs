@@ -105,13 +105,34 @@ public partial class MainWindow
             menu.Items.Add(mi);
             return mi;
         }
-        var title = Item($"{TitleText.Text}: {StatusText.Text}", () => { }, false);
+        // info at the top: the server, its TPS and who's on (not clickable)
+        void Info(string text, string brush, bool bold = false)
+        {
+            var tb = new System.Windows.Controls.TextBlock { Text = text, FontWeight = bold ? FontWeights.SemiBold : FontWeights.Normal, MaxWidth = 260, TextTrimming = TextTrimming.CharacterEllipsis };
+            tb.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, brush);
+            menu.Items.Add(new System.Windows.Controls.MenuItem { Header = tb, IsHitTestVisible = false, Focusable = false });
+        }
+        var running = _state == ServerState.Running;
+        Info(TitleText.Text, "Text", bold: true);
+        Info(running ? "Running" : StatusText.Text, running ? "Accent" : "Muted");
+        if (running)
+        {
+            var tps = _tps is { Points.Count: > 0 } t ? t.Points[^1].ToString("0.0") : "–";
+            Info($"TPS {tps}   ·   {_players.Count} online", "Muted");
+            if (_players.Count > 0)
+                Info(string.Join(", ", _players.Take(6)) + (_players.Count > 6 ? $" and {_players.Count - 6} more" : ""), "Muted");
+        }
         menu.Items.Add(new System.Windows.Controls.Separator());
-        Item("Open", ShowFromTray);
-        Item(StartLabel.Text, () => { if (_state != ServerState.Stopped) ShowFromTray(); BtnStart_Click(this, new RoutedEventArgs()); }, BtnStart.IsEnabled);
-        Item(StopLabel.Text, () => { ShowFromTray(); BtnStop_Click(this, new RoutedEventArgs()); }, BtnStop.IsEnabled);
+        Item("Open window", ShowFromTray);
         menu.Items.Add(new System.Windows.Controls.Separator());
-        Item("Quit", () => { ShowFromTray(); Close(); });
+        // the confirmations are panels in the window, so it comes back whenever one will be asked
+        var asks = _players.Count > 0;
+        Item(StartLabel.Text, () => { if (asks || !running) ShowFromTray(); BtnStart_Click(this, new RoutedEventArgs()); }, BtnStart.IsEnabled);
+        Item(StopLabel.Text, () => { if (asks || _countdownEnd != null) ShowFromTray(); BtnStop_Click(this, new RoutedEventArgs()); }, BtnStop.IsEnabled);
+        Item("Force stop", () => { ShowFromTray(); BtnKill_Click(this, new RoutedEventArgs()); })
+            .SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "Bad");
+        menu.Items.Add(new System.Windows.Controls.Separator());
+        Item("Close app", () => { ShowFromTray(); Close(); });
         // the menu must be the foreground window, or clicking elsewhere wouldn't close it
         menu.Opened += (_, _) =>
         {

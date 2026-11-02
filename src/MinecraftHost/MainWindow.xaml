@@ -384,6 +384,15 @@
 </StackPanel>
 </Border>
 </StackPanel>
+            <!-- Manage's own tabs: one of its three parts at a time -->
+            <StackPanel x:Name="ManageTabs" Orientation="Horizontal" Margin="-2,0,0,14">
+              <RadioButton x:Name="ManageWorlds" Style="{StaticResource FilterChip}" GroupName="ManagePart" Content="Worlds" IsChecked="True"
+                           Checked="ServerSection_Checked" ToolTip="Multiverse worlds and world groups"/>
+              <RadioButton x:Name="ManageCommands" Style="{StaticResource FilterChip}" GroupName="ManagePart" Content="Custom commands"
+                           Checked="ServerSection_Checked" ToolTip="The Custom Commands plugin's commands"/>
+              <RadioButton x:Name="ManageAnnounce" Style="{StaticResource FilterChip}" GroupName="ManagePart" Content="Announcements"
+                           Checked="ServerSection_Checked" ToolTip="Messages posted in chat on a schedule"/>
+            </StackPanel>
             <!-- Multiverse's worlds and world groups (MainWindow.Worlds.cs) -->
             <StackPanel x:Name="WorldsSection">
         <TextBlock x:Name="WorldsHint" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="2,0,0,12"/>

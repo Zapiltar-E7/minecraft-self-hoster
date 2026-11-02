@@ -51,7 +51,7 @@ Five sections along the top:
 - **Players:** who's online and who was on recently, this week's numbers, the whitelist and operators.
 - **General:** server software and version, memory, launch arguments and the server folder. Pick the **type** (Paper, Fabric, Quilt, Forge, NeoForge or Vanilla) and **Minecraft version**, then install or switch. It warns before a switch that stops plugins or mods loading, or before going to an older version, and offers to back up the worlds first.
 - **Options:** how the server looks in the multiplayer list (message of the day with colours, and the icon), and gameplay settings.
-- **Manage:** Multiverse worlds and world groups, the Custom Commands plugin's commands, and announcements, one after another. See **Worlds (Multiverse)**, **Custom commands** and **Announcements** below.
+- **Manage:** three tabs of its own: **Worlds** (Multiverse worlds and world groups), **Custom commands** (the Custom Commands plugin's commands) and **Announcements**. See **Worlds (Multiverse)**, **Custom commands** and **Announcements** below.
 - **Backups & restarts:** automatic backups, scheduled restarts with chat warnings, and restarting after a crash.
 
 ### Tools
@@ -149,7 +149,7 @@ If the server type can't load mods (Paper, Vanilla) or plugins (Fabric, Quilt, F
 
 ## Worlds (Multiverse)
 
-With **Multiverse-Core** installed, **Server → Manage** manages the server's worlds; with **Multiverse-Inventories**, its world groups too. The page always shows them; changes need the server running, because they go through Multiverse's own commands.
+With **Multiverse-Core** installed, **Server → Manage → Worlds** manages the server's worlds; with **Multiverse-Inventories**, its world groups too. The page always shows them; changes need the server running, because they go through Multiverse's own commands.
 
 - **Worlds:** each shows its type, game mode, difficulty and group. **Edit** changes its display name (`&` colour codes work), game mode, difficulty, PVP, flight, hunger, weather, whether it's hidden or loaded at start, and a player limit. **Delete** asks first and offers to back up the worlds; players in it are moved out. The server's main world, nether and end can't be deleted here.
 - **Create a world:** a name, the type (Overworld, Nether or The End), the terrain (normal, flat, large biomes or amplified), a seed (or a random one), structures on or off, game mode, difficulty, and a group to put it in.
@@ -159,7 +159,7 @@ With **Multiverse-Core** installed, **Server → Manage** manages the server's w
 
 ## Custom commands
 
-With the **Custom Commands** plugin installed, **Server → Manage** lists its commands, each with what it does, an on/off switch, **Edit** and **Delete**.
+With the **Custom Commands** plugin installed, **Server → Manage → Custom commands** lists its commands, each with what it does, an on/off switch, **Edit** and **Delete**.
 
 - **Editing a command:** its name and other names, the description shown in `/help`, the permission players need, a cooldown, the **chat message** (one line each, with the same colour and style buttons as announcements, a **Link** button for the plugin's `(Text)[<URL>]` links, and a preview of how it looks in chat), the **commands to run** (one per line; `{player}` is the player's name) and whether the player or the console runs them, and its **subcommands**.
 - **Saving** backs up the plugin's `config.yml` and changes only that command's lines, so comments and anything the editor doesn't show (like argument rules) stay as they are. While the server runs, the plugin is reloaded straight away.
@@ -250,7 +250,7 @@ Every download comes from the official source and is checked against its publish
 - **What's using TPS?** (Logs tab, TPS tile): records what the server spends its time on for 60 seconds with spark (built into Paper) and opens the report in your browser. The report is uploaded to spark.lucko.me so it can be viewed.
 - **Low disk space:** when the server's drive has less than 10 GB free, the Server tab shows a warning, and automatic backups are skipped rather than filling the drive.
 - **Disk space** (Tools): what's using room, largest first: worlds, the map, plugin data, logs, backups. Each row has a folder button and, where it makes sense, a delete button (with the server stopped; it says what you'd lose and asks first).
-- **System tray** (Settings): minimizing hides the app to an icon by the clock. Click it to come back, or right-click to start or stop the server.
+- **System tray** (Settings): minimizing hides the app to an icon by the clock. Click it to come back. Right-click it for the server's state, TPS and who's online, and to open the window, restart, stop or force stop the server, or close the app.
 
 ## Appearance
 

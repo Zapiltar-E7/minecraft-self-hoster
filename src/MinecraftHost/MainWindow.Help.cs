@@ -27,16 +27,32 @@ public partial class MainWindow
         var helpStep = new TourStep(() => BtnHelp, "Help is here any time",
             "Every page has its own tour: open a page and press Help. Tools (set up this PC, backups, moving the server), Settings and Info are at the bottom of the sidebar.");
 
+        if (TabServer.IsChecked == true && SecManage.IsChecked == true && ManageCommands.IsChecked == true) return new()
+        {
+            new(() => ManageTabs, "Manage",
+                "Worlds, custom commands and announcements, one at a time."),
+            new(() => CommandsSection, "Custom commands",
+                "The Custom Commands plugin's commands. Each one can show a chat message (with colours and clickable links) and run commands as the player or the console. Saving reloads the plugin."),
+            helpStep,
+        };
+
+        if (TabServer.IsChecked == true && SecManage.IsChecked == true && ManageAnnounce.IsChecked == true) return new()
+        {
+            new(() => ManageTabs, "Manage",
+                "Worlds, custom commands and announcements, one at a time."),
+            new(() => AnnounceCard, "Announcements",
+                "Messages the server posts in chat on a schedule. Put {map} in one and it's always the web map's current link, clickable."),
+            helpStep,
+        };
+
         if (TabServer.IsChecked == true && SecManage.IsChecked == true) return new()
         {
+            new(() => ManageTabs, "Manage",
+                "Worlds, custom commands and announcements, one at a time."),
             new(() => WorldsCard, "Worlds",
                 "Every world Multiverse manages. Edit one's display name, game mode, difficulty and rules, or delete it (the main world, nether and end are protected). Create a world at the bottom: normal, flat, nether or end, with any seed. Changes need the server running."),
             new(() => GroupsCard, "World groups",
                 "From Multiverse-Inventories. Worlds in the same group share what you tick, like inventories and experience; worlds in different groups keep them apart."),
-            new(() => CommandsSection, "Custom commands",
-                "The Custom Commands plugin's commands. Each one can show a chat message (with colours and clickable links) and run commands as the player or the console. Saving reloads the plugin."),
-            new(() => AnnounceCard, "Announcements",
-                "Messages the server posts in chat on a schedule. Put {map} in one and it's always the web map's current link, clickable."),
             helpStep,
         };
 
