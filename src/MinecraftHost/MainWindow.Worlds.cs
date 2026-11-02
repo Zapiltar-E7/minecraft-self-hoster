@@ -153,11 +153,11 @@ public partial class MainWindow
             TravelRows.Children.Add(Row("\uE909", "Worlds not in a group remember too", "Each one keeps its own spot",
                 Multiverse.LastLocationUngrouped, live && lastOn, v => $"mvinv config use-optionals-for-ungrouped-worlds {v.ToString().ToLowerInvariant()}"));
             // Multiverse-Inventories' optional shares: off, these are the same in every world whatever a group ticks
-            TravelRows.Children.Add(AdvancementsRow());
+            TravelRows.Children.Add(HandoverRow("advancements", "\uE734", "Advancements"));
+            TravelRows.Children.Add(HandoverRow("game_statistics", "\uE9D2", "Statistics"));
             foreach (var (share, icon, title, hint) in new[]
             {
                 ("recipes", "\uE82D", "Recipe book for each group", "Unlocked recipes, kept like advancements"),
-                ("game_statistics", "\uE9D2", "Statistics for each group", "Blocks mined, distance walked and the rest"),
             })
                 TravelRows.Children.Add(Row(icon, title, hint, Multiverse.OptionalOn(share), live, _ => $"mvinv toggle {share}",
                     on => on ? ConfirmOptionalShareAsync(title) : Task.FromResult(true)));
@@ -167,13 +167,14 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Advancements for each group: switched with the server stopped, on the files (GroupAdvancements), so everyone's
-    /// current advancements stay with the main worlds' group wherever they are, and every other group starts fresh.
+    /// Advancements (or statistics) for each group: switched with the server stopped, on the files (GroupAdvancements),
+    /// so everyone's current ones stay with the main worlds' group wherever they are, and every other group starts fresh.
     /// </summary>
-    SettingRow AdvancementsRow()
+    SettingRow HandoverRow(string share, string icon, string label)
     {
-        const string title = "Advancements for each group";
-        var on = Multiverse.OptionalOn("advancements");
+        var title = label + " for each group";
+        var what = label.ToLowerInvariant();
+        var on = Multiverse.OptionalOn(share);
         var stopped = _state == ServerState.Stopped && _server?.IsRunning != true && _busy == 0 && !_worldsBusy;
         var sw = new CheckBox { Style = (Style)FindResource("RowSwitch"), IsChecked = on, IsEnabled = stopped };
         System.Windows.Automation.AutomationProperties.SetName(sw, title);
@@ -183,9 +184,9 @@ public partial class MainWindow
             if (value == on) return;
             var level = PlayerLists.GetProperty("level-name") ?? "world";
             var main = GroupAdvancements.MainGroup(level)?.Name ?? "default";
-            if (value && Ask($"Turn on advancements for each group?\n\n" +
-                    $"Everyone's advancements now stay with the {main} group ({level} and its nether and end), wherever they are. Every other group starts empty, so players get a fresh start there.\n\n" +
-                    "Anyone who's in another group right now starts that group fresh, and gets their advancements back in the main worlds.\n\n" +
+            if (value && Ask($"Turn on {what} for each group?\n\n" +
+                    $"Everyone's {what} now stay with the {main} group ({level} and its nether and end), wherever they are. Every other group starts empty, so players get a fresh start there.\n\n" +
+                    $"Anyone who's in another group right now starts that group fresh, and gets their {what} back in the main worlds.\n\n" +
                     "Players' advancements, statistics and player files, and Multiverse-Inventories' data, are backed up first.",
                     title, MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             {
@@ -197,15 +198,15 @@ public partial class MainWindow
                 if (value)
                 {
                     await BackupPlayerProgressAsync(level);
-                    var moved = await Task.Run(() => GroupAdvancements.TurnOn(level));
-                    Log.Host("Advancements are now kept for each world group." + (moved.Count > 0
+                    var moved = await Task.Run(() => GroupAdvancements.TurnOn(level, share));
+                    Log.Host($"{label} are now kept for each world group." + (moved.Count > 0
                         ? $" Kept with the {main} group, and fresh where they are now: {string.Join(", ", moved)}."
                         : $" Everyone was in the {main} group already."));
                 }
                 else
                 {
-                    await Task.Run(() => GroupAdvancements.SetActive("advancements", false));
-                    Log.Host("Advancements are the same in every world again. Players keep the ones they have now.");
+                    await Task.Run(() => GroupAdvancements.SetActive(share, false));
+                    Log.Host($"{label} are the same in every world again. Players keep the ones they have now.");
                 }
             }
             catch (Exception ex)
@@ -218,8 +219,8 @@ public partial class MainWindow
         sw.Unchecked += changed;
         return new SettingRow
         {
-            Icon = "", Title = title, Content = sw,
-            Hint = stopped ? "Current advancements stay with the main worlds; other groups start fresh" : "Stop the server to switch this",
+            Icon = icon, Title = title, Content = sw,
+            Hint = stopped ? $"Current {what} stay with the main worlds; other groups start fresh" : "Stop the server to switch this",
         };
     }
 

@@ -5,11 +5,11 @@ using System.Text.Json.Nodes;
 namespace MinecraftHost.Core;
 
 /// <summary>
-/// Turns on Multiverse-Inventories' advancements share with everyone's current advancements kept by the main worlds'
-/// group, wherever each player is. Done with the server stopped, on the files:
-///   - a player in the main group needs nothing: Multiverse saves their advancements to that group when they next leave it;
-///   - a player anywhere else gets their advancements written into the main group's profile for them (Multiverse's form:
-///     the list of awarded criteria), and cleared in the game's own file, so the group they're in starts empty.
+/// Turns on Multiverse-Inventories' advancements (or statistics) share with everyone's current ones kept by the main
+/// worlds' group, wherever each player is. Done with the server stopped, on the files:
+///   - a player in the main group needs nothing: Multiverse saves theirs to that group when they next leave it;
+///   - a player anywhere else gets theirs written into the main group's profile for them (in Multiverse's own form),
+///     and cleared in the game's own file, so the group they're in starts empty.
 /// </summary>
 public static class GroupAdvancements
 {
@@ -28,47 +28,125 @@ public static class GroupAdvancements
     public static MvGroup? MainGroup(string level) =>
         Multiverse.ReadGroups().FirstOrDefault(g => g.Worlds.Contains(level, StringComparer.OrdinalIgnoreCase));
 
-    /// <returns>The players whose advancements were moved to the main group, with the world each is in.</returns>
-    public static List<string> TurnOn(string level)
+    /// <summary>The optional shares this hands over: advancements, or statistics ("game_statistics").</summary>
+    public static readonly string[] HandedOver = { "advancements", "game_statistics" };
+
+    /// <returns>The players whose advancements (or statistics) were moved to the main group, with the world each is in.</returns>
+    public static List<string> TurnOn(string level, string share)
     {
-        var main = MainGroup(level) ?? throw new InvalidOperationException($"{level} isn't in a world group, so there's no group to keep the current advancements.");
-        if (!Multiverse.SharedIds(main.Shares).Contains("advancements"))
-            throw new InvalidOperationException($"The {main.Name} group doesn't share advancements. Tick Advancements in its group settings first.");
-        var (dataDir, advDir, _) = PlayerDirs(level);
+        if (!HandedOver.Contains(share)) throw new ArgumentException(share);
+        var what = share == "advancements" ? "advancements" : "statistics";
+        var main = MainGroup(level) ?? throw new InvalidOperationException($"{level} isn't in a world group, so there's no group to keep the current {what}.");
+        if (!Multiverse.SharedIds(main.Shares).Contains(share))
+            throw new InvalidOperationException($"The {main.Name} group doesn't share {what}. Tick {(share == "advancements" ? "Advancements" : "Statistics")} in its group settings first.");
+        var (dataDir, advDir, statsDir) = PlayerDirs(level);
+        var dir = share == "advancements" ? advDir : statsDir;
         var uids = WorldUids();
         var names = Names();
         var moved = new List<string>();
-        foreach (var advFile in Directory.Exists(advDir) ? Directory.GetFiles(advDir, "*.json") : Array.Empty<string>())
+        foreach (var file in Directory.Exists(dir) ? Directory.GetFiles(dir, "*.json") : Array.Empty<string>())
         {
-            var uuid = Path.GetFileNameWithoutExtension(advFile);
+            var uuid = Path.GetFileNameWithoutExtension(file);
             var dat = Path.Combine(dataDir, uuid + ".dat");
             if (!File.Exists(dat)) continue;
             var world = LastWorld(dat, level, uids);
             if (world == null || main.Worlds.Contains(world, StringComparer.OrdinalIgnoreCase)) continue;
             if (!names.TryGetValue(uuid, out var name)) continue;   // Multiverse keeps profiles by name
 
-            var vanilla = JsonNode.Parse(File.ReadAllText(advFile))!.AsObject();
-            var criteria = new SortedSet<string>(StringComparer.Ordinal);
-            foreach (var (key, value) in vanilla)
-                if (key != "DataVersion" && value?["criteria"] is JsonObject c)
-                    foreach (var (criterion, _) in c) criteria.Add(criterion);
-
+            var vanilla = JsonNode.Parse(File.ReadAllText(file))!.AsObject();
             var profileFile = Path.Combine(Inv, "groups", main.Name, name + ".json");
             var profile = File.Exists(profileFile) ? JsonNode.Parse(File.ReadAllText(profileFile))!.AsObject() : new JsonObject();
             if (profile["SURVIVAL"] is not JsonObject survival) profile["SURVIVAL"] = survival = new JsonObject();
-            survival["advancements"] = new JsonArray(criteria.Select(c => (JsonNode)JsonValue.Create(c)!).ToArray());
+            survival[share] = share == "advancements" ? Criteria(vanilla) : Statistics(vanilla);
             Directory.CreateDirectory(Path.GetDirectoryName(profileFile)!);
             File.WriteAllText(profileFile, profile.ToJsonString());
 
             // where they are now starts with none (the game's own file, keeping its data version)
             var empty = new JsonObject();
+            if (share == "game_statistics") empty["stats"] = new JsonObject();
             if (vanilla["DataVersion"] is { } dv) empty["DataVersion"] = dv.DeepClone();
-            File.WriteAllText(advFile, empty.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(file, empty.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             moved.Add($"{name} ({world})");
         }
-        SetActive("advancements", true);
+        SetActive(share, true);
         return moved;
     }
+
+    /// <summary>Advancements as Multiverse keeps them: every awarded criterion's name.</summary>
+    static JsonArray Criteria(JsonObject vanilla)
+    {
+        var criteria = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var (key, value) in vanilla)
+            if (key != "DataVersion" && value?["criteria"] is JsonObject c)
+                foreach (var (criterion, _) in c) criteria.Add(criterion);
+        return new JsonArray(criteria.Select(c => (JsonNode)JsonValue.Create(c)!).ToArray());
+    }
+
+    /// <summary>
+    /// Statistics as Multiverse keeps them: by Bukkit's statistic names, a number each, or for the ones counted per
+    /// block, item or mob, the counts by its id ("minecraft:stone"). Read from the game's stats file.
+    /// </summary>
+    static JsonObject Statistics(JsonObject vanilla)
+    {
+        var result = new JsonObject();
+        if (vanilla["stats"] is not JsonObject stats) return result;
+        foreach (var (type, values) in stats)
+        {
+            if (values is not JsonObject counts) continue;
+            if (type == "minecraft:custom")
+            {
+                foreach (var (id, n) in counts)
+                    if (CustomStats.TryGetValue(id.Replace("minecraft:", ""), out var bukkit) && n is JsonValue v && v.TryGetValue<int>(out var i) && i != 0)
+                        result[bukkit] = i;
+            }
+            else if (TypedStats.TryGetValue(type.Replace("minecraft:", ""), out var bukkit))
+            {
+                var map = new JsonObject();
+                foreach (var (id, n) in counts)
+                    if (n is JsonValue v && v.TryGetValue<int>(out var i) && i != 0) map[id] = i;
+                if (map.Count > 0) result[bukkit] = map;
+            }
+        }
+        return result;
+    }
+
+    /// <summary>The game's statistics counted per block, item or mob, by Bukkit's names (Paper's CraftStatistic).</summary>
+    static readonly Dictionary<string, string> TypedStats = new()
+    {
+        ["mined"] = "MINE_BLOCK", ["crafted"] = "CRAFT_ITEM", ["used"] = "USE_ITEM", ["broken"] = "BREAK_ITEM",
+        ["picked_up"] = "PICKUP", ["dropped"] = "DROP", ["killed"] = "KILL_ENTITY", ["killed_by"] = "ENTITY_KILLED_BY",
+    };
+
+    /// <summary>The game's other statistics ("minecraft:custom"), by Bukkit's names (Paper's CraftStatistic, Minecraft 26.3).</summary>
+    static readonly Dictionary<string, string> CustomStats = new()
+    {
+        ["animals_bred"] = "ANIMALS_BRED", ["aviate_one_cm"] = "AVIATE_ONE_CM", ["bell_ring"] = "BELL_RING", ["boat_one_cm"] = "BOAT_ONE_CM",
+        ["clean_armor"] = "ARMOR_CLEANED", ["clean_banner"] = "BANNER_CLEANED", ["clean_shulker_box"] = "CLEAN_SHULKER_BOX",
+        ["climb_one_cm"] = "CLIMB_ONE_CM", ["crouch_one_cm"] = "CROUCH_ONE_CM", ["damage_absorbed"] = "DAMAGE_ABSORBED",
+        ["damage_blocked_by_shield"] = "DAMAGE_BLOCKED_BY_SHIELD", ["damage_dealt"] = "DAMAGE_DEALT", ["damage_dealt_absorbed"] = "DAMAGE_DEALT_ABSORBED",
+        ["damage_dealt_resisted"] = "DAMAGE_DEALT_RESISTED", ["damage_resisted"] = "DAMAGE_RESISTED", ["damage_taken"] = "DAMAGE_TAKEN",
+        ["deaths"] = "DEATHS", ["drop"] = "DROP_COUNT", ["eat_cake_slice"] = "CAKE_SLICES_EATEN", ["enchant_item"] = "ITEM_ENCHANTED",
+        ["fall_one_cm"] = "FALL_ONE_CM", ["fill_cauldron"] = "CAULDRON_FILLED", ["fish_caught"] = "FISH_CAUGHT", ["fly_one_cm"] = "FLY_ONE_CM",
+        ["happy_ghast_one_cm"] = "HAPPY_GHAST_ONE_CM", ["horse_one_cm"] = "HORSE_ONE_CM", ["inspect_dispenser"] = "DISPENSER_INSPECTED",
+        ["inspect_dropper"] = "DROPPER_INSPECTED", ["inspect_hopper"] = "HOPPER_INSPECTED", ["interact_with_anvil"] = "INTERACT_WITH_ANVIL",
+        ["interact_with_beacon"] = "BEACON_INTERACTION", ["interact_with_blast_furnace"] = "INTERACT_WITH_BLAST_FURNACE",
+        ["interact_with_brewingstand"] = "BREWINGSTAND_INTERACTION", ["interact_with_campfire"] = "INTERACT_WITH_CAMPFIRE",
+        ["interact_with_cartography_table"] = "INTERACT_WITH_CARTOGRAPHY_TABLE", ["interact_with_crafting_table"] = "CRAFTING_TABLE_INTERACTION",
+        ["interact_with_furnace"] = "FURNACE_INTERACTION", ["interact_with_grindstone"] = "INTERACT_WITH_GRINDSTONE",
+        ["interact_with_lectern"] = "INTERACT_WITH_LECTERN", ["interact_with_loom"] = "INTERACT_WITH_LOOM",
+        ["interact_with_smithing_table"] = "INTERACT_WITH_SMITHING_TABLE", ["interact_with_smoker"] = "INTERACT_WITH_SMOKER",
+        ["interact_with_stonecutter"] = "INTERACT_WITH_STONECUTTER", ["jump"] = "JUMP", ["leave_game"] = "LEAVE_GAME",
+        ["minecart_one_cm"] = "MINECART_ONE_CM", ["mob_kills"] = "MOB_KILLS", ["nautilus_one_cm"] = "NAUTILUS_ONE_CM", ["open_barrel"] = "OPEN_BARREL",
+        ["open_chest"] = "CHEST_OPENED", ["open_enderchest"] = "ENDERCHEST_OPENED", ["open_shulker_box"] = "SHULKER_BOX_OPENED",
+        ["pig_one_cm"] = "PIG_ONE_CM", ["play_noteblock"] = "NOTEBLOCK_PLAYED", ["play_record"] = "RECORD_PLAYED", ["play_time"] = "PLAY_ONE_MINUTE",
+        ["player_kills"] = "PLAYER_KILLS", ["pot_flower"] = "FLOWER_POTTED", ["raid_trigger"] = "RAID_TRIGGER", ["raid_win"] = "RAID_WIN",
+        ["sleep_in_bed"] = "SLEEP_IN_BED", ["sleep_in_straw_bed"] = "SLEEP_IN_STRAW_BED", ["sneak_time"] = "SNEAK_TIME", ["sprint_one_cm"] = "SPRINT_ONE_CM",
+        ["strider_one_cm"] = "STRIDER_ONE_CM", ["swim_one_cm"] = "SWIM_ONE_CM", ["talked_to_villager"] = "TALKED_TO_VILLAGER", ["target_hit"] = "TARGET_HIT",
+        ["time_since_death"] = "TIME_SINCE_DEATH", ["time_since_rest"] = "TIME_SINCE_REST", ["total_world_time"] = "TOTAL_WORLD_TIME",
+        ["traded_with_villager"] = "TRADED_WITH_VILLAGER", ["trigger_trapped_chest"] = "TRAPPED_CHEST_TRIGGERED", ["tune_noteblock"] = "NOTEBLOCK_TUNED",
+        ["use_cauldron"] = "CAULDRON_USED", ["walk_on_water_one_cm"] = "WALK_ON_WATER_ONE_CM", ["walk_one_cm"] = "WALK_ONE_CM",
+        ["walk_under_water_one_cm"] = "WALK_UNDER_WATER_ONE_CM",
+    };
 
     /// <summary>Adds or removes an optional share in Multiverse-Inventories' config (server stopped), keeping the rest of the file.</summary>
     public static void SetActive(string share, bool on)

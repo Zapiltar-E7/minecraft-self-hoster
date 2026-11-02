@@ -274,6 +274,24 @@ public partial class MainWindow
             Format("&" + picked);
         };
         tools.Children.Add(custom);
+        // a gradient: two colours, wrapped round the selected text (or the tags at the caret, to type between)
+        var gradient = new Button { Content = "Gradient", Height = 20, Padding = new Thickness(7, 0, 7, 0), Margin = new Thickness(0, 0, 4, 4), FontSize = 11, FontWeight = FontWeights.Normal, ToolTip = "Fade the text from one colour to another (Minecraft 1.16 and later)" };
+        System.Windows.Automation.AutomationProperties.SetName(gradient, "Gradient");
+        gradient.Click += (_, _) =>
+        {
+            var (selStart, selLength) = (box.SelectionStart, box.SelectionLength);
+            var first = PickColor(Color.FromRgb(0xFF, 0x55, 0x55), "Gradient: first colour", tryOnTheme: false);
+            if (first == null) return;
+            var last = PickColor(Color.FromRgb(0x55, 0x55, 0xFF), "Gradient: last colour", tryOnTheme: false);
+            if (last == null) return;
+            box.Select(selStart, selLength);
+            var open = $"<gradient:{first}:{last}>";
+            const string close = "</gradient>";
+            box.SelectedText = open + box.SelectedText + close;
+            box.CaretIndex = selLength > 0 ? selStart + open.Length + selLength + close.Length : selStart + open.Length;
+            box.Focus();
+        };
+        tools.Children.Add(gradient);
         foreach (var (code, label, tip) in new[]
         {
             ('l', "B", "Bold"), ('o', "I", "Italic"), ('n', "U", "Underline"), ('m', "S", "Strikethrough"),

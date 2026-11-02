@@ -8,7 +8,7 @@ namespace MinecraftHost.Core;
 public sealed record Announcement
 {
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
-    /// <summary>The message, one or more lines. &amp;-codes for colours and styles work (&amp;#RRGGBB for any colour), and {map}, {address} and {online} are filled in when it's sent.</summary>
+    /// <summary>The message, one or more lines. &amp;-codes for colours and styles work (&amp;#RRGGBB for any colour, &lt;gradient:#RRGGBB:#RRGGBB&gt;…&lt;/gradient&gt; for a gradient), and {map}, {address} and {online} are filled in when it's sent.</summary>
     public string Text { get; init; } = "";
     public int EveryMinutes { get; init; } = 30;
     public bool Enabled { get; init; } = true;
@@ -41,10 +41,15 @@ public static class Announcements
     /// </summary>
     public sealed record Piece(string Text, string? Color, bool Bold, bool Italic, bool Underline, bool Strike, bool Obfuscated, string? Token);
 
+    // a colour gradient over the text inside: <gradient:#RRGGBB:#RRGGBB>text</gradient>, two colours or more
+    static readonly Regex GradientTag = new(@"<gradient((?::#[0-9a-f]{6}){2,})>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    const string GradientEnd = "</gradient>";
+
     /// <summary>The message split into styled pieces, the way chat shows it: a colour resets the styles, &amp;r resets everything.</summary>
-    public static List<Piece> Parse(string text)
+    public static List<Piece> Parse(string text) => ParseRun(text.Replace("\r\n", "\n").Replace('\r', '\n').Trim());
+
+    static List<Piece> ParseRun(string text)
     {
-        text = text.Replace("\r\n", "\n").Replace('\r', '\n').Trim();
         var pieces = new List<Piece>();
         string? color = null;
         bool bold = false, italic = false, underline = false, strike = false, obfuscated = false;
@@ -79,10 +84,55 @@ public static class Announcements
                 i += token.Length;
                 continue;
             }
+            var gradient = GradientTag.Match(text, i);
+            if (gradient.Success && gradient.Index == i)
+            {
+                Flush();
+                var from = i + gradient.Length;
+                var end = text.IndexOf(GradientEnd, from, StringComparison.OrdinalIgnoreCase);
+                var inner = end < 0 ? text[from..] : text[from..end];
+                // the styles on before it carry in; after it, the colour and styles are as they were
+                var styles = (bold ? "&l" : "") + (italic ? "&o" : "") + (underline ? "&n" : "") + (strike ? "&m" : "") + (obfuscated ? "&k" : "");
+                var stops = gradient.Groups[1].Value.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                pieces.AddRange(Spread(ParseRun(styles + inner), stops));
+                i = end < 0 ? text.Length : end + GradientEnd.Length;
+                continue;
+            }
             run.Append(text[i++]);
         }
         Flush();
         return pieces;
+    }
+
+    /// <summary>Colours each letter along the gradient (a placeholder counts as one); letters next to each other with the same colour and style stay one piece.</summary>
+    static IEnumerable<Piece> Spread(List<Piece> pieces, string[] stops)
+    {
+        var rgb = stops.Select(s => (R: Convert.ToInt32(s[1..3], 16), G: Convert.ToInt32(s[3..5], 16), B: Convert.ToInt32(s[5..7], 16))).ToArray();
+        var total = pieces.Sum(p => p.Token != null ? 1 : p.Text.Count(c => c != '\n'));
+        var index = 0;
+        string At()
+        {
+            var t = total <= 1 ? 0 : (double)index / (total - 1) * (rgb.Length - 1);
+            var k = Math.Min((int)t, rgb.Length - 2);
+            var f = t - k;
+            int Mix(int a, int b) => (int)Math.Round(a + (b - a) * f);
+            return $"#{Mix(rgb[k].R, rgb[k + 1].R):X2}{Mix(rgb[k].G, rgb[k + 1].G):X2}{Mix(rgb[k].B, rgb[k + 1].B):X2}";
+        }
+        var output = new List<Piece>();
+        foreach (var p in pieces)
+        {
+            if (p.Token != null) { output.Add(p with { Color = At() }); index++; continue; }
+            foreach (var ch in p.Text)
+            {
+                var color = ch == '\n' ? output.LastOrDefault()?.Color ?? At() : At();
+                if (ch != '\n') index++;
+                var last = output.Count > 0 ? output[^1] : null;
+                if (last != null && last.Token == null && last.Color == color && last with { Text = "" } == p with { Text = "", Color = color })
+                    output[^1] = last with { Text = last.Text + ch };
+                else output.Add(p with { Text = ch.ToString(), Color = color });
+            }
+        }
+        return output;
     }
 
     /// <summary>
@@ -125,7 +175,7 @@ public static class Announcements
         color == null ? "#FFFFFF" : color.StartsWith('#') ? color : Motd.Colors.First(c => c.Code == color[0]).Hex;
 
     /// <summary>The message as typed, without formatting codes (placeholders kept), for the list.</summary>
-    public static string WithoutCodes(string text) => Code.Replace(text, "");
+    public static string WithoutCodes(string text) => Code.Replace(GradientTag.Replace(text, "").Replace(GradientEnd, "", StringComparison.OrdinalIgnoreCase), "");
 
     /// <summary>Minecraft 1.21.5 changed text components' click events (and the year-numbered versions after it keep that).</summary>
     public static bool NewClickFormat(string? version)
