@@ -139,6 +139,13 @@
             <TextBlock Text="Server"/>
           </StackPanel>
         </RadioButton>
+        <RadioButton x:Name="TabWorlds" Style="{StaticResource NavButton}" GroupName="Tabs" Checked="Tab_Checked"
+                     ToolTip="Multiverse worlds and world groups">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE909;" VerticalAlignment="Center" Margin="0,1,8,0"/>
+            <TextBlock Text="Worlds"/>
+          </StackPanel>
+        </RadioButton>
         <RadioButton x:Name="TabLog" Style="{StaticResource NavButton}" GroupName="Tabs" Checked="Tab_Checked">
           <StackPanel Orientation="Horizontal">
             <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE9D9;" VerticalAlignment="Center" Margin="0,1,8,0"/>
@@ -993,6 +1000,28 @@
 </StackPanel>
 </Border>
 </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- ================= WORLDS TAB ================= -->
+    <!-- Multiverse's worlds and world groups (MainWindow.Worlds.cs) -->
+    <ScrollViewer x:Name="WorldsPage" Grid.Row="3" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+      <StackPanel MaxWidth="900" HorizontalAlignment="Left" Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+        <TextBlock x:Name="WorldsHint" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" Margin="2,0,0,12"/>
+        <StackPanel x:Name="WorldsCard" Style="{StaticResource Group}">
+          <TextBlock Style="{StaticResource GroupTitle}" Text="WORLDS"/>
+          <Border Style="{StaticResource GroupPanel}">
+            <StackPanel x:Name="WorldRows"/>
+          </Border>
+        </StackPanel>
+        <StackPanel x:Name="GroupsCard" Style="{StaticResource Group}">
+          <TextBlock Style="{StaticResource GroupTitle}" Text="WORLD GROUPS"/>
+          <Border Style="{StaticResource GroupPanel}">
+            <StackPanel x:Name="GroupRows"/>
+          </Border>
+          <TextBlock Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="4,8,0,0"
+                     Text="From Multiverse-Inventories. Worlds in the same group share what you tick; worlds in different groups keep inventories apart."/>
+        </StackPanel>
       </StackPanel>
     </ScrollViewer>
 

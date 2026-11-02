@@ -147,6 +147,14 @@ Works exactly like the Plugins tab, for Fabric, Quilt, Forge and NeoForge mods i
 
 If the server type can't load mods (Paper, Vanilla) or plugins (Fabric, Quilt, Forge, NeoForge, Vanilla), a note on that tab says so. On the Configs tab, mod settings from the `config` folder show under **Mod configs**, or under the mod's own folder name.
 
+## Worlds (Multiverse)
+
+With **Multiverse-Core** installed, the **Worlds** page manages the server's worlds; with **Multiverse-Inventories**, its world groups too. The page always shows them; changes need the server running, because they go through Multiverse's own commands.
+
+- **Worlds:** each shows its type, game mode, difficulty and group. **Edit** changes its display name (`&` colour codes work), game mode, difficulty, PVP, flight, hunger, weather, whether it's hidden or loaded at start, and a player limit. **Delete** asks first and offers to back up the worlds; players in it are moved out. The server's main world, nether and end can't be deleted here.
+- **Create a world:** a name, the type (Overworld, Nether or The End), the terrain (normal, flat, large biomes or amplified), a seed (or a random one), structures on or off, game mode, difficulty, and a group to put it in.
+- **World groups:** worlds in a group share what you tick: inventory, ender chest, experience, health, hunger, potion effects, where they were, respawn point, advancements, statistics and recipes. Anything not shared is kept apart per group, so a survival inventory stays out of creative worlds. A world is in one group at a time; adding it to a group takes it out of its old one.
+
 ## Announcements
 
 **Server → Announcements** posts messages in chat on a schedule while the server runs.

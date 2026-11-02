@@ -41,15 +41,29 @@ public static class Updater
 
     static Version Normalize(Version v) => new(v.Major, v.Minor, Math.Max(v.Build, 0), Math.Max(v.Revision, 0));
 
-    /// <summary>At startup: removes the exes earlier updates replaced ("&lt;name&gt;.old.exe", or "&lt;name&gt;.old-&lt;time&gt;.exe").</summary>
+    /// <summary>
+    /// At startup: removes the exes earlier updates replaced ("&lt;name&gt;.old.exe", or "&lt;name&gt;.old-&lt;time&gt;.exe").
+    /// Right after Restart the old copy is often still closing and its file still in use, so this keeps trying in the
+    /// background for half a minute; a copy left running longer than that is cleaned up at a later start.
+    /// </summary>
     public static void CleanUp()
     {
         var dir = Path.GetDirectoryName(ExePath)!;
-        foreach (var old in Directory.GetFiles(dir, Path.GetFileNameWithoutExtension(ExePath) + ".old*.exe"))
+        var pattern = Path.GetFileNameWithoutExtension(ExePath) + ".old*.exe";
+        _ = Task.Run(async () =>
         {
-            try { File.Delete(old); }
-            catch { }   // another copy of the app is still running from it: next time
-        }
+            for (var attempt = 0; attempt < 30; attempt++)
+            {
+                var left = Directory.GetFiles(dir, pattern);
+                if (left.Length == 0) return;
+                foreach (var old in left)
+                {
+                    try { File.Delete(old); }
+                    catch { }   // still in use: try again in a moment
+                }
+                await Task.Delay(1000);
+            }
+        });
     }
 
     /// <summary>

@@ -129,7 +129,7 @@ public partial class MainWindow : Window
     int _navIndex;   // the open sidebar button, so the next page slides in from the side it's on
 
     /// <summary>The sidebar's page buttons, top to bottom.</summary>
-    RadioButton[] NavButtons => new[] { TabServer, TabLog, TabConnections, TabAddons, TabMods, TabConfigs, TabTools, TabSettings };
+    RadioButton[] NavButtons => new[] { TabServer, TabWorlds, TabLog, TabConnections, TabAddons, TabMods, TabConfigs, TabTools, TabSettings };
     string? _iconShown;
 
     /// <summary>The header icon: the current server's server-icon.png (what players see in their server list), else the creeper.</summary>
@@ -165,7 +165,7 @@ public partial class MainWindow : Window
 
     void Tab_Checked(object sender, RoutedEventArgs e)
     {
-        if (ServerPage == null || ConfigPage == null || AddonsPage == null || ToolsPage == null || LogPage == null || SettingsPage == null || ConnectionsPage == null) return;   // fires during InitializeComponent
+        if (ServerPage == null || ConfigPage == null || AddonsPage == null || ToolsPage == null || LogPage == null || SettingsPage == null || ConnectionsPage == null || WorldsPage == null) return;   // fires during InitializeComponent
         var configs = TabConfigs.IsChecked == true;
         var plugins = TabAddons.IsChecked == true;
         var mods = TabMods.IsChecked == true;
@@ -174,7 +174,10 @@ public partial class MainWindow : Window
         var log = TabLog.IsChecked == true;
         var settings = TabSettings.IsChecked == true;
         var connections = TabConnections.IsChecked == true;
-        ServerPage.Visibility = !configs && !addons && !tools && !log && !settings && !connections ? Visibility.Visible : Visibility.Collapsed;
+        var worlds = TabWorlds.IsChecked == true;
+        ServerPage.Visibility = !configs && !addons && !tools && !log && !settings && !connections && !worlds ? Visibility.Visible : Visibility.Collapsed;
+        WorldsPage.Visibility = worlds ? Visibility.Visible : Visibility.Collapsed;
+        if (worlds) RefreshWorlds();
         ConnectionsPage.Visibility = connections ? Visibility.Visible : Visibility.Collapsed;
         if (connections) _ = OpenConnectionsTabAsync();
         SettingsPage.Visibility = settings ? Visibility.Visible : Visibility.Collapsed;
@@ -183,14 +186,14 @@ public partial class MainWindow : Window
         ToolsPage.Visibility = tools ? Visibility.Visible : Visibility.Collapsed;
         LogPage.Visibility = log ? Visibility.Visible : Visibility.Collapsed;
         PageTitle.Text = configs ? "Configs" : plugins ? "Plugins" : mods ? "Mods" : tools ? "Tools" : log ? "Logs"
-                       : settings ? "Settings" : connections ? "Connections" : "Server";
+                       : settings ? "Settings" : connections ? "Connections" : worlds ? "Worlds" : "Server";
         // the new page (and its title) slides in from the side of the sidebar it was picked towards
         var index = Array.IndexOf(NavButtons, sender);
         if (index >= 0 && index != _navIndex)
         {
             var dy = index > _navIndex ? 14 : -14;
             _navIndex = index;
-            foreach (var page in new UIElement[] { ServerPage, ConnectionsPage, SettingsPage, ConfigPage, AddonsPage, ToolsPage, LogPage })
+            foreach (var page in new UIElement[] { ServerPage, ConnectionsPage, SettingsPage, ConfigPage, AddonsPage, ToolsPage, LogPage, WorldsPage })
                 if (page.Visibility == Visibility.Visible) { _shownPage = page; Motion.PageIn(page, 0, dy); }
             Motion.PageIn(PageTitle, 0, dy / 2);
         }

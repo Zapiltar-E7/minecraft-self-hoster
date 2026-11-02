@@ -33,14 +33,14 @@ public sealed class Rcon : IDisposable
         catch { rcon.Dispose(); return null; }
     }
 
-    /// <summary>Runs a command and returns its reply, without Minecraft's § colour codes.</summary>
-    public async Task<string> CommandAsync(string command)
+    /// <summary>Runs a command and returns its reply, without Minecraft's § colour codes. Slow commands (creating a world) can wait longer.</summary>
+    public async Task<string> CommandAsync(string command, int timeoutSeconds = 5)
     {
-        var (_, body) = await SendAsync(2, command);
+        var (_, body) = await SendAsync(2, command, timeoutSeconds);
         return Regex.Replace(body, "§.", "");
     }
 
-    async Task<(int Id, string Body)> SendAsync(int type, string body)
+    async Task<(int Id, string Body)> SendAsync(int type, string body, int timeoutSeconds = 5)
     {
         await _lock.WaitAsync();
         try
@@ -53,7 +53,7 @@ public sealed class Rcon : IDisposable
             BitConverter.GetBytes(id).CopyTo(packet, 4);
             BitConverter.GetBytes(type).CopyTo(packet, 8);
             payload.CopyTo(packet, 12);
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
             await stream.WriteAsync(packet, timeout.Token);
 
             var head = await ReadExactly(stream, 4, timeout.Token);

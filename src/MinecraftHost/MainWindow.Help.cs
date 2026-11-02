@@ -27,6 +27,15 @@ public partial class MainWindow
         var helpStep = new TourStep(() => BtnHelp, "Help is here any time",
             "Every page has its own tour: open a page and press Help. Tools (set up this PC, backups, moving the server), Settings and Info are at the bottom of the sidebar.");
 
+        if (TabWorlds.IsChecked == true) return new()
+        {
+            new(() => WorldsCard, "Worlds",
+                "Every world Multiverse manages. Edit one's display name, game mode, difficulty and rules, or delete it (the main world, nether and end are protected). Create a world at the bottom: normal, flat, nether or end, with any seed. Changes need the server running."),
+            new(() => GroupsCard, "World groups",
+                "From Multiverse-Inventories. Worlds in the same group share what you tick, like inventories and experience; worlds in different groups keep them apart."),
+            helpStep,
+        };
+
         if (TabConnections.IsChecked == true) return new()
         {
             new(() => JoinPlayit, "How friends join",
