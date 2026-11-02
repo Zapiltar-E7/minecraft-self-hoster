@@ -153,9 +153,9 @@ public partial class MainWindow
             TravelRows.Children.Add(Row("\uE909", "Worlds not in a group remember too", "Each one keeps its own spot",
                 Multiverse.LastLocationUngrouped, live && lastOn, v => $"mvinv config use-optionals-for-ungrouped-worlds {v.ToString().ToLowerInvariant()}"));
             // Multiverse-Inventories' optional shares: off, these are the same in every world whatever a group ticks
+            TravelRows.Children.Add(AdvancementsRow());
             foreach (var (share, icon, title, hint) in new[]
             {
-                ("advancements", "\uE734", "Advancements for each group", "Groups that share advancements keep their own; other worlds keep theirs too"),
                 ("recipes", "\uE82D", "Recipe book for each group", "Unlocked recipes, kept like advancements"),
                 ("game_statistics", "\uE9D2", "Statistics for each group", "Blocks mined, distance walked and the rest"),
             })
@@ -165,6 +165,86 @@ public partial class MainWindow
         TravelRows.Children.Add(Row("\uE945", "Respawn in the overworld after dying in the nether or end", "Like vanilla Minecraft. Off: they respawn in the same world.",
             Multiverse.RespawnInOverworld, live, v => $"mv config default-respawn-in-overworld {v.ToString().ToLowerInvariant()}"));
     }
+
+    /// <summary>
+    /// Advancements for each group: switched with the server stopped, on the files (GroupAdvancements), so everyone's
+    /// current advancements stay with the main worlds' group wherever they are, and every other group starts fresh.
+    /// </summary>
+    SettingRow AdvancementsRow()
+    {
+        const string title = "Advancements for each group";
+        var on = Multiverse.OptionalOn("advancements");
+        var stopped = _state == ServerState.Stopped && _server?.IsRunning != true && _busy == 0 && !_worldsBusy;
+        var sw = new CheckBox { Style = (Style)FindResource("RowSwitch"), IsChecked = on, IsEnabled = stopped };
+        System.Windows.Automation.AutomationProperties.SetName(sw, title);
+        RoutedEventHandler changed = async (_, _) =>
+        {
+            var value = sw.IsChecked == true;
+            if (value == on) return;
+            var level = PlayerLists.GetProperty("level-name") ?? "world";
+            var main = GroupAdvancements.MainGroup(level)?.Name ?? "default";
+            if (value && Ask($"Turn on advancements for each group?\n\n" +
+                    $"Everyone's advancements now stay with the {main} group ({level} and its nether and end), wherever they are. Every other group starts empty, so players get a fresh start there.\n\n" +
+                    "Anyone who's in another group right now starts that group fresh, and gets their advancements back in the main worlds.\n\n" +
+                    "Players' advancements, statistics and player files, and Multiverse-Inventories' data, are backed up first.",
+                    title, MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                sw.IsChecked = on;
+                return;
+            }
+            try
+            {
+                if (value)
+                {
+                    await BackupPlayerProgressAsync(level);
+                    var moved = await Task.Run(() => GroupAdvancements.TurnOn(level));
+                    Log.Host("Advancements are now kept for each world group." + (moved.Count > 0
+                        ? $" Kept with the {main} group, and fresh where they are now: {string.Join(", ", moved)}."
+                        : $" Everyone was in the {main} group already."));
+                }
+                else
+                {
+                    await Task.Run(() => GroupAdvancements.SetActive("advancements", false));
+                    Log.Host("Advancements are the same in every world again. Players keep the ones they have now.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Ask("That didn't work: " + ex.Message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            RefreshWorlds();
+        };
+        sw.Checked += changed;
+        sw.Unchecked += changed;
+        return new SettingRow
+        {
+            Icon = "", Title = title, Content = sw,
+            Hint = stopped ? "Current advancements stay with the main worlds; other groups start fresh" : "Stop the server to switch this",
+        };
+    }
+
+    /// <summary>A copy of players' advancements, statistics and player files, and Multiverse-Inventories' data, in backups/player-progress.</summary>
+    Task<string> BackupPlayerProgressAsync(string level) => Task.Run(() =>
+    {
+        var dest = Path.Combine(Paths.ServerDir, "backups", "player-progress", DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+        var (data, adv, stats) = GroupAdvancements.PlayerDirs(level);
+        void Copy(string from, string to)
+        {
+            if (!Directory.Exists(from)) return;
+            foreach (var f in Directory.GetFiles(from, "*", SearchOption.AllDirectories))
+            {
+                var target = Path.Combine(to, Path.GetRelativePath(from, f));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(f, target);
+            }
+        }
+        Copy(adv, Path.Combine(dest, "advancements"));
+        Copy(stats, Path.Combine(dest, "stats"));
+        Copy(data, Path.Combine(dest, "playerdata"));
+        Copy(Path.Combine(Paths.ServerDir, "plugins", "Multiverse-Inventories"), Path.Combine(dest, "Multiverse-Inventories"));
+        Log.Host($"Backed up players' progress to {dest}.");
+        return dest;
+    });
 
     /// <summary>
     /// Before an optional share goes on: Multiverse-Inventories files a player's current progress under the group they
@@ -180,20 +260,7 @@ public partial class MainWindow
                 title, MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return false;
         try
         {
-            var to = await Task.Run(() =>
-            {
-                var dest = Path.Combine(Paths.ServerDir, "backups", "player-progress", DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
-                foreach (var part in new[] { "advancements", "stats", "playerdata" })
-                {
-                    var from = Path.Combine(Paths.ServerDir, level, part);
-                    if (!Directory.Exists(from)) continue;
-                    var target = Path.Combine(dest, part);
-                    Directory.CreateDirectory(target);
-                    foreach (var f in Directory.GetFiles(from)) File.Copy(f, Path.Combine(target, Path.GetFileName(f)));
-                }
-                return dest;
-            });
-            Log.Host($"Backed up players' advancements, statistics and files to {to}.");
+            await BackupPlayerProgressAsync(level);
             return true;
         }
         catch (Exception ex)

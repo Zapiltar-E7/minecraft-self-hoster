@@ -68,6 +68,7 @@ public partial class MainWindow
         _tray = new Tray(this);
         _tray.Open += ShowFromTray;
         _tray.Menu += ShowTrayMenu;
+        _tray.Show();   // always there, window open or not, for its menu
         StateChanged += (_, _) =>
         {
             if (WindowState != WindowState.Minimized || HostConfig.Load()?.TrayOnMinimize == false) return;
@@ -92,7 +93,6 @@ public partial class MainWindow
         Show();
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         Activate();
-        _tray?.Hide();
     }
 
     void ShowTrayMenu()
