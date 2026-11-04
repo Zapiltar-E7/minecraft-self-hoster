@@ -10,7 +10,29 @@ public static class Playit
 {
     const string DownloadUrl = "https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-windows-x86_64-signed.exe";
 
-    public static bool HasSecret => File.Exists(Paths.PlayitSecret);
+    /// <summary>Whether the current server's playit.gg account is linked.</summary>
+    public static bool HasSecret => File.Exists(SecretFor(HostConfig.Load()?.PlayitAccount));
+
+    /// <summary>
+    /// More playit.gg accounts, so each server can have its own: one key file each, named after the account.
+    /// This PC's own (first) account keeps its key where the agent looks by default (<see cref="Paths.PlayitSecret"/>).
+    /// </summary>
+    public static string AccountsDir => Path.Combine(Paths.PlayitSecretDir, "accounts");
+
+    /// <summary>The key file of an account; null or empty is this PC's own.</summary>
+    public static string SecretFor(string? account) =>
+        string.IsNullOrWhiteSpace(account) ? Paths.PlayitSecret : Path.Combine(AccountsDir, Paths.SafeName(account) + ".toml");
+
+    /// <summary>The extra accounts linked so far, by name.</summary>
+    public static List<string> Accounts()
+    {
+        try
+        {
+            return Directory.GetFiles(AccountsDir, "*.toml").Select(f => Path.GetFileNameWithoutExtension(f))
+                .Order(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+        catch { return new(); }
+    }
 
     public static async Task EnsureInstalledAsync()
     {
@@ -37,10 +59,14 @@ public static class Playit
     /// The playit 1.x exe is only a background service that waits for a separate app to give it
     /// a secret key. This does that app's job: claim the agent in the browser and save the key.
     /// </summary>
-    public static async Task ClaimAsync(CancellationToken cancel = default)
+    /// <param name="account">The account to link (see <see cref="Accounts"/>); by default the current server's.</param>
+    public static async Task ClaimAsync(CancellationToken cancel = default, string? account = null)
     {
+        account ??= HostConfig.Load()?.PlayitAccount;
+        var secretFile = SecretFor(account);
         await EnsureInstalledAsync();
-        StopAll();
+        // an agent keeps the key it started with; a newly added account isn't in use by one yet
+        if (string.IsNullOrWhiteSpace(account) || File.Exists(secretFile)) StopAll();
 
         var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(5)).ToLowerInvariant();
         var url = $"https://playit.gg/claim/{code}";
@@ -74,26 +100,48 @@ public static class Playit
         }
         if (secret == null) throw new InvalidOperationException("playit.gg approved the agent but did not return a key. Try again.");
 
-        Directory.CreateDirectory(Paths.PlayitSecretDir);
-        if (File.Exists(Paths.PlayitSecret))
-            File.Move(Paths.PlayitSecret, Paths.PlayitSecret + $".bak-{DateTime.Now:yyyyMMdd-HHmmss}");
-        File.WriteAllText(Paths.PlayitSecret, $"secret_key = \"{secret}\"\n");
-        Log.Host("This PC is now linked to your playit.gg account.");
+        Directory.CreateDirectory(Path.GetDirectoryName(secretFile)!);
+        if (File.Exists(secretFile))
+            File.Move(secretFile, secretFile + $".bak-{DateTime.Now:yyyyMMdd-HHmmss}");
+        File.WriteAllText(secretFile, $"secret_key = \"{secret}\"\n");
+        Log.Host(string.IsNullOrWhiteSpace(account)
+            ? "This PC is now linked to your playit.gg account."
+            : $"The playit.gg account \"{Paths.SafeName(account)}\" is now linked.");
     }
 
-    /// <summary>Starts the agent hidden. Returns null if one was already running (reused, not ours to stop).</summary>
-    public static Process? Start()
+    /// <summary>
+    /// Starts the agent hidden, on a playit.gg account (null: this PC's own). Our own agent left running is restarted,
+    /// since it may be on another server's account. Returns null if someone else's agent is running (reused, not ours
+    /// to stop).
+    /// </summary>
+    public static Process? Start(string? account = null)
     {
-        if (Process.GetProcessesByName("playit").Length > 0)
-        {
-            Log.Host("playit agent already running - reusing it.");
-            return null;
-        }
-        var p = Process.Start(new ProcessStartInfo(Paths.PlayitExe)
+        foreach (var running in Process.GetProcessesByName("playit"))
+            try
+            {
+                if (!string.Equals(ForceStop.ExePath(running.Id), Paths.PlayitExe, StringComparison.OrdinalIgnoreCase))
+                {
+                    Log.Host(string.IsNullOrWhiteSpace(account)
+                        ? "playit agent already running - reusing it."
+                        : "Another playit agent is already running on its own account, so this server's account isn't used.");
+                    return null;
+                }
+                running.Kill();
+                running.WaitForExit(3000);
+            }
+            catch { }
+        var start = new ProcessStartInfo(Paths.PlayitExe)
         {
             WorkingDirectory = Paths.ToolsDir, UseShellExecute = false, CreateNoWindow = true,
-        });
-        Log.Host("playit tunnel started.");
+        };
+        // this PC's own account is where the agent looks anyway (and older agents don't know --secret-path)
+        if (!string.IsNullOrWhiteSpace(account))
+        {
+            start.ArgumentList.Add("--secret-path");
+            start.ArgumentList.Add(SecretFor(account));
+        }
+        var p = Process.Start(start);
+        Log.Host(string.IsNullOrWhiteSpace(account) ? "playit tunnel started." : $"playit tunnel started (account \"{Paths.SafeName(account)}\").");
         return p;
     }
 

@@ -79,6 +79,8 @@ public sealed class ServerProfile
     public int RamGB { get; set; } = 4;
     public int RequiredJava { get; set; } = 21;
     public string? PlayitAddress { get; set; } = "";
+    /// <summary>The playit.gg account this server's tunnel uses (Playit.Accounts); null: this PC's own account.</summary>
+    public string? PlayitAccount { get; set; }
     public bool ShareMap { get; set; }
     /// <summary>Put BlueMap's link in the description of EssentialsX Discord's channel when it changes.</summary>
     public bool DiscordMapTopic { get; set; }
@@ -128,6 +130,8 @@ public sealed class HostConfig
     public int RamGB { get; set; } = 4;
     public int RequiredJava { get; set; } = 21;
     public string? PlayitAddress { get; set; } = "";
+    /// <summary>The playit.gg account this server's tunnel uses (Playit.Accounts); null: this PC's own account.</summary>
+    public string? PlayitAccount { get; set; }
     public bool ShareMap { get; set; }
     /// <summary>Put BlueMap's link in the description of EssentialsX Discord's channel when it changes.</summary>
     public bool DiscordMapTopic { get; set; }

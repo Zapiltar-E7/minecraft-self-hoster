@@ -513,7 +513,7 @@ public partial class MainWindow : Window
             {
                 await Playit.EnsureInstalledAsync();
                 if (!Playit.HasSecret) await Playit.ClaimAsync();
-                _tunnel = Playit.Start();
+                _tunnel = Playit.Start(config.PlayitAccount);
             }
             if (shareWeb) await StartWebTunnelsAsync();
         });

@@ -1212,6 +1212,10 @@
             <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE8C8;" ToolTip="Copy" Click="BtnCopyFriend_Click"/>
             <TextBox x:Name="TxtFriend" Style="{StaticResource Value}"/>
           </DockPanel>
+          <!-- each server can use its own playit.gg account (MainWindow.Connections.cs) -->
+          <TextBlock x:Name="PlayitAccountLabel" Style="{StaticResource FieldLabel}" Text="playit.gg account"/>
+          <ComboBox x:Name="CmbPlayitAccount" Width="240" HorizontalAlignment="Left" SelectionChanged="CmbPlayitAccount_Changed"
+                    AutomationProperties.Name="playit.gg account" ToolTip="The playit.gg account this server's tunnel uses. Each server can have its own."/>
           <TextBlock x:Name="PlayitStatus" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="2,8,0,0"/>
           <Button x:Name="BtnPlayitTunnels" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="12,6" FontWeight="Normal" Click="BtnPlayitTunnels_Click">
             <StackPanel Orientation="Horizontal">

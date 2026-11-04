@@ -61,7 +61,7 @@ At the bottom of the sidebar.
 | Tool | What it does |
 |---|---|
 | **Set up this PC** | Checks for and installs Java, the playit agent, your playit account link and cloudflared (see below). |
-| **Link playit.gg account** | Links this PC to a playit.gg account (or re-links it). |
+| **Link playit.gg account** | Links the current server's playit.gg account (or re-links it). |
 | **Set public address** | Saves the playit address shown under "Friends join with". |
 | **Back up worlds** | Zips your worlds into `backups\<server name>\`. |
 | **Install a modpack** | Sets a server up from a modpack file (see **Modpacks** below). Also under Server → Software, and by dropping the file on the window. |
@@ -73,7 +73,7 @@ Closing the window while the server runs asks first, then stops the server safel
 
 How players and browsers reach your server. It updates itself from the plugins and mods you have switched on.
 
-- **Minecraft:** choose **playit.gg** or **Port forwarding**. With port forwarding, the card shows which port to forward to which local address, and friends join with your public IP (or a domain you enter). With playit.gg, **Let friends join** opens the tunnel when the server starts. **Friends join with** is the address to give friends, with Copy and a pencil to change it. **Open playit.gg tunnels** opens your tunnel list.
+- **Minecraft:** choose **playit.gg** or **Port forwarding**. With port forwarding, the card shows which port to forward to which local address, and friends join with your public IP (or a domain you enter). With playit.gg, **Let friends join** opens the tunnel when the server starts. **Friends join with** is the address to give friends, with Copy and a pencil to change it. **Open playit.gg tunnels** opens your tunnel list. **playit.gg account** picks which playit.gg account the server's tunnel uses, so each server can have its own: "This PC's account" (the first one linked), or **Link another account...**, which asks for a name and opens playit.gg in your browser (sign in there to the other account, then approve). Linked accounts are listed for every server. A change takes effect at the next start.
 - **Each connection chooses how it is reached:** the plugin cards have their own choice at the top, **playit.gg** or **Port forwarding**, plus a free **Cloudflare link** for web pages. So the game can go through playit.gg while the map uses port forwarding, or any other mix. A card you haven't set follows the Minecraft choice. With port forwarding, the card shows the port to forward and the address friends use.
 - **Web pages:** maps (BlueMap, Dynmap, squaremap, Pl3xMap) and Plan each get a card.
   - **Share with a link (Cloudflare)** gives friends a free browser link while the server runs (see below).

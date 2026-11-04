@@ -35,10 +35,13 @@ public partial class MainWindow
         var config = HostConfig.LoadOrNew();
         PlayitStatus.Text = config.PortForward
             ? $"Forward TCP {ServerFiles.GetServerPort()} on your router to this PC ({Net.LocalIPv4() ?? "its local IP"})."
-            : Playit.HasSecret ? "Linked to playit.gg." : "Not linked to playit.gg yet (Tools > Link playit.gg account).";
+            : !Playit.HasSecret ? "Not linked to playit.gg yet (Tools > Link playit.gg account)."
+            : string.IsNullOrWhiteSpace(config.PlayitAccount) ? "Linked to playit.gg." : $"Linked to playit.gg as \"{config.PlayitAccount}\".";
+        if (_server?.IsRunning == true && !config.PortForward) PlayitStatus.Text += " A change of account takes effect at the next start.";
         BtnPlayitTunnels.Visibility = config.PortForward ? Visibility.Collapsed : Visibility.Visible;
         if (Net.PublicIPv4 == null && (config.PortForward || _services.Any(s => Method(config, s) == ViaForward))) _ = FindPublicAddressAsync();
         _connBuilding = true;
+        FillPlayitAccounts(config);
         JoinPlayit.IsChecked = !config.PortForward;
         JoinForward.IsChecked = config.PortForward;
         ConnList.Items.Clear();
@@ -51,6 +54,54 @@ public partial class MainWindow
         _connBuilding = false;
         if (detail) ShowConnDetail();
         UpdateTabDots();
+    }
+
+    const string AddPlayitAccount = "+";
+
+    /// <summary>The account picker: this PC's own account, the others linked so far, and "Link another account...".</summary>
+    void FillPlayitAccounts(HostConfig config)
+    {
+        PlayitAccountLabel.Visibility = CmbPlayitAccount.Visibility = config.PortForward ? Visibility.Collapsed : Visibility.Visible;
+        CmbPlayitAccount.Items.Clear();
+        CmbPlayitAccount.Items.Add(new ComboBoxItem { Content = "This PC's account", Tag = "" });
+        var accounts = Playit.Accounts();
+        // still shown when its key file is gone, so the server's choice stays visible (and the status says it isn't linked)
+        if (!string.IsNullOrWhiteSpace(config.PlayitAccount) && !accounts.Contains(config.PlayitAccount, StringComparer.OrdinalIgnoreCase))
+            accounts.Add(config.PlayitAccount);
+        foreach (var a in accounts) CmbPlayitAccount.Items.Add(new ComboBoxItem { Content = a, Tag = a });
+        CmbPlayitAccount.Items.Add(new ComboBoxItem { Content = "Link another account...", Tag = AddPlayitAccount });
+        CmbPlayitAccount.SelectedItem = CmbPlayitAccount.Items.Cast<ComboBoxItem>()
+            .First(i => string.Equals((string)i.Tag, config.PlayitAccount ?? "", StringComparison.OrdinalIgnoreCase));
+    }
+
+    async void CmbPlayitAccount_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_connBuilding || CmbPlayitAccount.SelectedItem is not ComboBoxItem { Tag: string tag }) return;
+        if (tag == AddPlayitAccount)
+        {
+            var name = Prompt("Link another playit.gg account",
+                "A name for it, like the account's email or the server it's for.\n\nNext, playit.gg opens in your browser: sign in there to the account you want " +
+                "(sign out of the other one first), then approve. This server then uses it.", "", "Link");
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var account = Paths.SafeName(name.Trim());
+                await RunBusyAsync(() => Playit.ClaimAsync(account: account));
+                if (File.Exists(Playit.SecretFor(account)))
+                {
+                    var linked = HostConfig.LoadOrNew();
+                    linked.PlayitAccount = account;
+                    linked.Save();
+                }
+            }
+            RebuildConnections();
+            UpdateView();
+            return;
+        }
+        var config = HostConfig.LoadOrNew();
+        config.PlayitAccount = tag.Length == 0 ? null : tag;
+        config.Save();
+        RebuildConnections();
+        UpdateView();
     }
 
     /// <summary>A row of the list: a status dot, the name and its protocol and port.</summary>
