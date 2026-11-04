@@ -100,6 +100,11 @@ public partial class MainWindow
         _rcon?.Dispose();
         _rcon = null;
         _rconInfo = null;
+        _tpsCommand = null;
+        _tpsTried = false;
+        _spark = null;
+        _sparkAsked = default;
+        Interlocked.Exchange(ref _sparkUntil, 0);
         ResetPerformance();
     }
 
@@ -148,27 +153,12 @@ public partial class MainWindow
         await SyncPlayersAsync();
         try
         {
-            double? tps = null, mspt = null;
             var edition = HostConfig.Load()?.Edition;
-            if (edition is "Paper" or "Purpur" or "Folia")
-            {
-                var t = Regex.Match(await _rcon.CommandAsync("tps"), @":\s*\*?([\d.]+)");
-                if (t.Success) tps = Math.Min(20, double.Parse(t.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture));
-                var m = Regex.Match(await _rcon.CommandAsync("mspt"), @"([\d.]+)/([\d.]+)/([\d.]+)");
-                if (m.Success) mspt = double.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
-            }
-            else
-            {
-                // vanilla, Fabric, Forge (1.20.3+): /tick query
-                var m = Regex.Match(await _rcon.CommandAsync("tick query"), @"Average time per tick: ([\d.]+)\s*ms");
-                if (m.Success)
-                {
-                    mspt = double.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
-                    tps = Math.Min(20, 1000 / Math.Max(mspt.Value, 0.001));
-                }
-            }
+            var (tps, mspt) = await QueryTpsAsync(edition);
             if (tps is { } v) RecordTps(v);
-            else ShowNoTps("This server type doesn't report its TPS.");
+            else if (!Editions.RunsMods(edition)) ShowNoTps("This server type doesn't report its TPS.");
+            else if (!SparkInstalled()) ShowNoTps("This version doesn't report its TPS. Add the spark mod (Mods tab) to see it.");
+            else ShowNoTps("Waiting for spark's first reading...");
             if (mspt is { } ms) Push(_mspt!, ms, Math.Max(50, _mspt!.Points.DefaultIfEmpty(0).Max() * 1.1), $"{ms:0.0} ms",
                 ms <= 50 ? "Fast enough for 20 TPS" : "Over 50 ms: the server is falling behind");
         }
@@ -177,6 +167,114 @@ public partial class MainWindow
             _rcon?.Dispose();
             _rcon = null;
         }
+    }
+
+    // Which query gave TPS this run: "tick query" (vanilla, Fabric, Forge 1.20.3+), "forge tps" / "neoforge tps"
+    // (older Forge and NeoForge), or "spark tps" (older Fabric and Quilt, with the spark mod). Null until one answers.
+    string? _tpsCommand;
+    bool _tpsTried;
+    sealed record SparkReading(double Tps, double? Mspt);
+    volatile SparkReading? _spark;
+    DateTime _sparkAsked;
+    long _sparkUntil;   // ticks: lines up to then are spark's reply to the app (hidden from the log)
+    bool _sparkDurations;
+
+    static readonly Regex TickQueryRx = new(@"Average time per tick: ([\d.]+)\s*ms", RegexOptions.Compiled);
+    static readonly Regex ForgeTpsRx = new(@"Overall\s*:\s*Mean tick time:\s*([\d.,]+)\s*ms\.?\s*Mean TPS:\s*([\d.,]+)", RegexOptions.Compiled);
+    static readonly Regex SparkNumberRx = new(@"\*?(\d+(?:\.\d+)?)", RegexOptions.Compiled);
+    static readonly Regex SparkDurationRx = new(@"([\d.]+)/([\d.]+)/([\d.]+)/([\d.]+)", RegexOptions.Compiled);
+
+    static double Num(string text) => double.Parse(text.Replace(',', '.'), System.Globalization.CultureInfo.InvariantCulture);
+
+    async Task<(double? Tps, double? Mspt)> QueryTpsAsync(string? edition)
+    {
+        if (edition is "Paper" or "Purpur" or "Folia")
+        {
+            double? tps = null, mspt = null;
+            var t = Regex.Match(await _rcon!.CommandAsync("tps"), @":\s*\*?([\d.]+)");
+            if (t.Success) tps = Math.Min(20, Num(t.Groups[1].Value));
+            var m = Regex.Match(await _rcon.CommandAsync("mspt"), @"([\d.]+)/([\d.]+)/([\d.]+)");
+            if (m.Success) mspt = Num(m.Groups[1].Value);
+            return (tps, mspt);
+        }
+
+        // over RCON, so nothing shows in the log; each is tried once a run and then only the one that answered
+        if (_tpsCommand == "tick query" || _tpsCommand == null && !_tpsTried)
+        {
+            var m = TickQueryRx.Match(await _rcon!.CommandAsync("tick query"));
+            if (m.Success)
+            {
+                _tpsCommand = "tick query";
+                var ms = Num(m.Groups[1].Value);
+                return (Math.Min(20, 1000 / Math.Max(ms, 0.001)), ms);
+            }
+        }
+        var forge = edition switch { "Forge" => new[] { "forge tps" }, "NeoForge" => new[] { "neoforge tps", "forge tps" }, _ => Array.Empty<string>() };
+        foreach (var command in forge.Where(c => _tpsCommand == c || _tpsCommand == null && !_tpsTried))
+        {
+            var m = ForgeTpsRx.Match(await _rcon!.CommandAsync(command));
+            if (!m.Success) continue;
+            _tpsCommand = command;
+            return (Math.Min(20, Num(m.Groups[2].Value)), Num(m.Groups[1].Value));
+        }
+        _tpsTried = true;
+
+        // spark answers its commands a moment later, after RCON has replied, so it's asked on the console instead:
+        // every 30 s, with its reply left out of the log. In between, the last reading stands.
+        if (_tpsCommand is null or "spark tps" && Editions.RunsMods(edition) && SparkInstalled())
+        {
+            AskSpark();
+            if (_spark is { } s) { _tpsCommand = "spark tps"; return (s.Tps, s.Mspt); }
+        }
+        return (null, null);
+    }
+
+    bool SparkInstalled()
+    {
+        try { return Directory.EnumerateFiles(System.IO.Path.Combine(Paths.ServerDir, "mods"), "spark*.jar").Any(); }
+        catch { return false; }
+    }
+
+    void AskSpark()
+    {
+        if (_server is not { IsRunning: true } server || DateTime.Now - _sparkAsked < TimeSpan.FromSeconds(30)) return;
+        _sparkAsked = DateTime.Now;
+        _sparkDurations = false;
+        Interlocked.Exchange(ref _sparkUntil, DateTime.Now.AddSeconds(10).Ticks);
+        server.Hide = SparkLine;
+        server.Send("spark tps");
+    }
+
+    /// <summary>
+    /// On the server's output thread. spark's reply to "spark tps":
+    ///   [⚡] TPS from last 5s, 10s, 1m, 5m, 15m:
+    ///   [⚡]  *20.0, *20.0, 19.9, 20.0, 20.0
+    ///   [⚡] Tick durations (min/med/95%ile/max ms) from last 10s, 1m:
+    ///   [⚡]  0.4/0.9/1.5/12.3;  0.4/0.9/1.6/45.1
+    ///   [⚡] CPU usage from last 10s, 1m, 15m: ... (system) ... (process)
+    /// The 10-second TPS and median tick time are kept.
+    /// </summary>
+    bool SparkLine(string line)
+    {
+        if (DateTime.Now.Ticks > Interlocked.Read(ref _sparkUntil)) return false;
+        var i = line.IndexOf("[⚡]", StringComparison.Ordinal);
+        if (i < 0) return false;
+        var text = line[(i + 3)..];
+        if (text.Contains("TPS from last")) { }
+        else if (text.Contains("Tick durations")) _sparkDurations = true;
+        else if (text.Contains("(process)")) Interlocked.Exchange(ref _sparkUntil, 0);
+        else if (_sparkDurations)
+        {
+            _sparkDurations = false;
+            var d = SparkDurationRx.Match(text);
+            if (d.Success && _spark is { } s) _spark = s with { Mspt = Num(d.Groups[2].Value) };
+        }
+        else if (!text.Contains("CPU usage") && !text.Contains('%'))
+        {
+            var values = SparkNumberRx.Matches(text);
+            if (values.Count >= 2) _spark = new SparkReading(Math.Min(20, Num(values[1].Groups[1].Value)), _spark?.Mspt);
+        }
+        return true;
     }
 
     DateTime _playersSynced;

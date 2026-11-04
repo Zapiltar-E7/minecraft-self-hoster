@@ -12,6 +12,8 @@ public sealed class MinecraftServer
     public event Action<int>? Exited;
     /// <summary>Every output line, on a background thread (for waiting on a reply such as "Saved the game").</summary>
     public event Action<string>? Line;
+    /// <summary>Lines it returns true for are left out of the log window (replies to the app's own console queries).</summary>
+    public Func<string, bool>? Hide;
     public bool IsRunning { get; private set; }
     public Process Process => _process;
 
@@ -97,7 +99,7 @@ public sealed class MinecraftServer
     void OnLine(object sender, DataReceivedEventArgs e)
     {
         if (e.Data == null) return;
-        Log.Write(e.Data);
+        if (Hide?.Invoke(e.Data) != true) Log.Write(e.Data);
         Line?.Invoke(e.Data);
         if (!_readyRaised && e.Data.Contains("Done (") && e.Data.Contains(")! For help"))
         {
