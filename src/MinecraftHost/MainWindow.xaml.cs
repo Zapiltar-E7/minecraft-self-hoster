@@ -214,6 +214,7 @@ public partial class MainWindow : Window
     {
         if (ServerCol0 == null || AnnounceCard == null) return;   // fires during InitializeComponent
         LayoutServerCards(animate: true);
+        if (SecWorld.IsChecked == true && !GameplayCard.IsEnabled) SyncWorldCard();   // server.properties may exist by now
         if (SecManage.IsChecked != true) return;
         if (ManageWorlds.IsChecked == true) RefreshWorlds();
         else if (ManageCommands.IsChecked == true) RefreshCommands();
@@ -538,6 +539,7 @@ public partial class MainWindow : Window
                 ScheduleNextRestart();
                 if (!IsVisible) _tray?.Balloon(TitleText.Text, "The server is online.");
                 ResetPerformance();
+                if (!GameplayCard.IsEnabled) SyncWorldCard();   // a first start has just written server.properties
             });
             _server.Exited += code => Dispatcher.BeginInvoke(() => OnServerExited(code));
             _startedAt = DateTime.Now;
