@@ -51,7 +51,22 @@ public partial class MainWindow
             var find = new Button { Padding = new Thickness(12, 6, 12, 6), FontWeight = FontWeights.Normal, Content = IconText("", "Multiverse-Core") };
             find.Click += (_, _) => Playit.OpenUrl("https://modrinth.com/plugin/multiverse-core");
             WorldRows.Children.Add(new SettingRow { Icon = "", Title = "Multiverse-Core isn't installed", Hint = "It lets the server have more worlds than the usual three. Drop its jar on the window to install it.", Content = find });
-            WorldsHint.Text = "";
+            // the world folders on disk can still be deleted (ones an old Multiverse or another plugin left), with the server stopped
+            var stopped = _state == ServerState.Stopped && _server?.IsRunning != true && _busy == 0;
+            foreach (var f in WorldFolders.Find())
+            {
+                var remove = SmallIcon("", f.Main ? "The server's main worlds can't be deleted here" : "Delete " + f.Name,
+                    stopped && !f.Main, () => _ = DeleteWorldFolderAsync(f));
+                remove.SetResourceReference(Control.ForegroundProperty, "Bad");
+                WorldRows.Children.Add(new SettingRow
+                {
+                    Icon = f.Name.Contains("nether") ? "" : f.Name.Contains("end") ? "" : "",
+                    Title = f.Name,
+                    Hint = (f.IsDimension ? "Dimension folder" : "World folder") + (f.Main ? " · the server's own" : ""),
+                    Content = remove,
+                });
+            }
+            WorldsHint.Text = stopped ? "The world folders on disk. Deleting one can't be undone." : "Stop the server to delete a world folder.";
             GroupsCard.Visibility = Visibility.Collapsed;
             TravelCard.Visibility = Visibility.Collapsed;
             return;
@@ -521,6 +536,23 @@ public partial class MainWindow
             Check(reply);
             Log.Host($"World {w.Name} deleted.");
         });
+    }
+
+    /// <summary>Without Multiverse: deletes a world folder from disk, with the server stopped (so nothing has it open).</summary>
+    async Task DeleteWorldFolderAsync(WorldFolders.Folder f)
+    {
+        if (f.Main || _server?.IsRunning == true) return;
+        if (Ask($"Delete the world {f.Name} for good?\n\nEverything built in it is lost. Its folder is removed:\n{f.Dir}",
+                "Delete world", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        var backup = Ask("Back up the worlds first? (Recommended.)", "Delete world", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+        if (backup == MessageBoxResult.Cancel) return;
+        await RunBusyAsync(async () =>
+        {
+            if (backup == MessageBoxResult.Yes) await Task.Run(ServerFiles.BackupWorlds);
+            await Task.Run(() => Directory.Delete(f.Dir, recursive: true));
+            Log.Host($"World {f.Name} deleted ({f.Dir}).");
+        });
+        RefreshWorlds();
     }
 
     // ------------------------------------------------------------ world groups
