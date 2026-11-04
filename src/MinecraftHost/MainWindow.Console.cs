@@ -141,7 +141,21 @@ public partial class MainWindow
         ScrollLogToEnd();
     }
 
-    void UpdateLogEmpty() => LogEmpty.Visibility = _logView?.Filter != null && LogList.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    void UpdateLogEmpty()
+    {
+        LogEmpty.Visibility = _logView?.Filter != null && LogList.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        var search = TxtLogSearch.Text.Trim();
+        var kind = LogChat.IsChecked == true ? "chat" : LogProblems.IsChecked == true ? "problems" : LogApp.IsChecked == true ? "the app's" : null;
+        LogFiltered.Visibility = _logView?.Filter != null ? Visibility.Visible : Visibility.Collapsed;
+        LogFilteredText.Text = "Showing only " + (kind != null ? kind + " lines" : "lines") + (search.Length > 0 ? $" with \"{search}\"" : "");
+    }
+
+    void LogShowAll_Click(object sender, RoutedEventArgs e)
+    {
+        TxtLogSearch.Text = "";
+        LogAll.IsChecked = true;
+        LogFilter_Changed(TxtLogSearch, e);
+    }
 
     // ------------------------------------------------------------ copy
 

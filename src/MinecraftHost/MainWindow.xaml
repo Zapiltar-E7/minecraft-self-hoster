@@ -1278,6 +1278,11 @@
                          IsHitTestVisible="False" TextTrimming="CharacterEllipsis"/>
             </Grid>
           </DockPanel>
+          <!-- a search or filter hides lines: say so, so the log doesn't look like it's missing some -->
+          <DockPanel x:Name="LogFiltered" DockPanel.Dock="Top" Margin="0,0,0,8" Visibility="Collapsed">
+            <Button DockPanel.Dock="Right" Padding="10,4" FontWeight="Normal" Content="Show everything" Click="LogShowAll_Click"/>
+            <TextBlock x:Name="LogFilteredText" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+          </DockPanel>
           <Border Background="{DynamicResource Console}" CornerRadius="8" Padding="0,6">
             <Grid>
               <ListBox x:Name="LogList" Background="Transparent" BorderThickness="0" SelectionMode="Extended"

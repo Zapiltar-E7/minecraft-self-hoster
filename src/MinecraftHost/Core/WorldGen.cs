@@ -216,7 +216,8 @@ public static class WorldGen
 
     /// <summary>
     /// Deletes the main world (overworld, nether and end) so the next start makes a new one with the settings above.
-    /// Kept: the world's datapacks, other worlds (Paper 26 keeps them as dimensions inside the main world's folder),
+    /// Kept: the world's datapacks, other worlds (Paper 26 keeps them as dimensions inside the main world's folder; with
+    /// mods, those dimensions are the world's own and are deleted too),
     /// and, unless <paramref name="freshPlayers"/>, players' inventories, positions, advancements and statistics.
     /// The server must be stopped. Returns what was deleted.
     /// </summary>
@@ -242,8 +243,10 @@ public static class WorldGen
             if (!freshPlayers && playerParts.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
             Delete(entry);
         }
-        // Paper 26: the main world's own dimensions; any others are other worlds
-        foreach (var own in new[] { "overworld", "the_nether", "the_end" }) Delete(Path.Combine(dimensions, "minecraft", own));
+        // Paper 26: the main world's own dimensions; any others are other worlds (Multiverse's). With mods there are no
+        // other worlds: every dimension there (the Aether, the Twilight Forest...) belongs to this world and goes with it.
+        if (Editions.RunsMods(HostConfig.Load()?.Edition)) Delete(dimensions);
+        else foreach (var own in new[] { "overworld", "the_nether", "the_end" }) Delete(Path.Combine(dimensions, "minecraft", own));
         // older Paper and Spigot: the nether and end in folders of their own
         foreach (var own in new[] { "_nether", "_the_end" }) Delete(Path.Combine(Paths.ServerDir, LevelName + own));
         return deleted;

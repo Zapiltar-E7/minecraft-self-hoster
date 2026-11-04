@@ -144,7 +144,11 @@ public partial class MainWindow
             Padding = new Thickness(12, 6, 12, 6), FontWeight = FontWeights.Normal, Content = IconText("", "Make a new world..."),
             IsEnabled = exists && !running && _busy == 0,
         };
-        make.Click += (_, _) => _ = MakeNewWorldAsync();
+        make.Click += async (_, _) =>
+        {
+            try { await MakeNewWorldAsync(); }
+            catch (Exception ex) { ShowError(ex.Message); }   // not lost in a task nobody waits for
+        };
         GenerationRows.Children.Add(new SettingRow
         {
             Icon = "", Title = "Make a new world",
@@ -190,7 +194,9 @@ public partial class MainWindow
             {
                 TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 10, 0, 4),
                 Text = $"The world \"{level}\" (its overworld, nether and end) is deleted for good, and the next start makes a new one: {typeLabel}, {seedText}.\n\n" +
-                       "The world's datapacks are kept, and so are other worlds (Multiverse's).",
+                       (Editions.RunsMods(HostConfig.Load()?.Edition)
+                           ? "Mod dimensions (like the Aether) are made new with it. The world's datapacks are kept."
+                           : "The world's datapacks are kept, and so are other worlds (Multiverse's)."),
             });
             panel.Children.Add(backup);
             panel.Children.Add(fresh);
@@ -200,13 +206,27 @@ public partial class MainWindow
         }, 500);
         if (go is not true) return;
 
+        // read on this (UI) thread: the switches can't be touched from the background work below
+        var doBackup = backup.IsChecked == true;
+        var freshPlayers = fresh.IsChecked == true;
+        var startNow = start.IsChecked == true;
+        string? error = null;
         var ok = await RunBusyAsync(async () =>
         {
-            if (backup.IsChecked == true) await Task.Run(ServerFiles.BackupWorlds);
-            var deleted = await Task.Run(() => WorldGen.DeleteMainWorld(fresh.IsChecked == true));
-            Log.Host($"World \"{level}\" deleted ({deleted.Count} {(deleted.Count == 1 ? "item" : "items")}: {string.Join(", ", deleted)}). The next start makes a new one.");
+            try
+            {
+                if (doBackup && await Task.Run(ServerFiles.BackupWorlds) == null) throw new System.IO.IOException("the backup wasn't made, so nothing was deleted");
+                var deleted = await Task.Run(() => WorldGen.DeleteMainWorld(freshPlayers));
+                Log.Host($"World \"{level}\" deleted ({deleted.Count} {(deleted.Count == 1 ? "item" : "items")}: {string.Join(", ", deleted)}). The next start makes a new one.");
+            }
+            catch (Exception ex) { error = ex.Message; throw; }
         });
         _ = RefreshGenerationAsync();
-        if (ok && start.IsChecked == true) await StartServerAsync(false);
+        if (!ok)
+        {
+            Ask($"The new world wasn't made: {error}\n\nThe log has the details.", "Make a new world", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+        if (startNow) await StartServerAsync(false);
     }
 }
