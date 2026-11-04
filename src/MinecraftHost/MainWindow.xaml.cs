@@ -243,12 +243,12 @@ public partial class MainWindow : Window
         _serverLaidOut = section;
         _manageLaidOut = part;
         var (left, right) = section == SecPlayers ? (new FrameworkElement[] { PlayersCard, WeekCard }, new FrameworkElement[] { WhitelistCard, OpsCard })
-            : section == SecWorld ? (new FrameworkElement[] { ListingCard }, new FrameworkElement[] { GameplayCard })
+            : section == SecWorld ? (new FrameworkElement[] { ListingCard }, new FrameworkElement[] { GameplayCard, GenerationCard })
             : section == SecUpkeep ? (new FrameworkElement[] { RestartCard }, new FrameworkElement[] { BackupCard })
             // Manage: its tabs, then the open part
             : section == SecManage ? (new FrameworkElement[] { ManageTabs, part == ManageCommands ? CommandsSection : part == ManageAnnounce ? AnnounceCard : WorldsSection }, Array.Empty<FrameworkElement>())
             : (new FrameworkElement[] { SoftwareCard }, new FrameworkElement[] { MemoryCard, FolderCard });
-        foreach (var card in new FrameworkElement[] { SoftwareCard, MemoryCard, FolderCard, PlayersCard, WeekCard, WhitelistCard, OpsCard, ListingCard, GameplayCard, RestartCard, BackupCard, AnnounceCard, WorldsSection, CommandsSection, ManageTabs })
+        foreach (var card in new FrameworkElement[] { SoftwareCard, MemoryCard, FolderCard, PlayersCard, WeekCard, WhitelistCard, OpsCard, ListingCard, GameplayCard, GenerationCard, RestartCard, BackupCard, AnnounceCard, WorldsSection, CommandsSection, ManageTabs })
             (card.Parent as Panel)?.Children.Remove(card);
         foreach (var card in left) ServerCol0.Children.Add(card);
         foreach (var card in right) (two ? ServerCol1 : ServerCol0).Children.Add(card);
@@ -441,6 +441,7 @@ public partial class MainWindow : Window
         _tray?.SetTip($"{TitleText.Text}: {StatusText.Text}" + (_state == ServerState.Running ? $", {_players.Count} online" : ""));
         RefreshConnectionsIfShown();
         RefreshWorldsIfShown();
+        RefreshGenerationIfShown();
         RefreshPlayerLists();
         UpdateAddonControls();
     }

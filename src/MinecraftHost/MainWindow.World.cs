@@ -73,6 +73,7 @@ public partial class MainWindow
             : "Start the server once to create its settings.";
         UpdateMotdPreview();
         UpdateIconPreview();
+        _ = RefreshGenerationAsync();
     }
 
     void SetProp(string key, string value)

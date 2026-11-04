@@ -592,6 +592,14 @@
 </Border>
 <TextBlock x:Name="WorldNote" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="4,8,0,0"/>
 </StackPanel>
+<!-- how the main world is made, and making a new one (MainWindow.WorldGen.cs) -->
+<StackPanel x:Name="GenerationCard" Style="{StaticResource Group}">
+<TextBlock Style="{StaticResource GroupTitle}" Text="WORLD GENERATION"/>
+<Border Style="{StaticResource GroupPanel}">
+<StackPanel x:Name="GenerationRows"/>
+</Border>
+<TextBlock x:Name="GenerationNote" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="4,8,0,0"/>
+</StackPanel>
             </StackPanel>
           </Grid>
         </StackPanel>
