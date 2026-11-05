@@ -262,6 +262,7 @@ Every download comes from the official source and is checked against its publish
 ## Appearance
 
 **Settings → Appearance:**
+- **Own colours for this server:** gives the server you're managing its own menu and highlight colours, so you can tell at a glance which one you're on. Switch it on, then pick the colours below; they change for that server only. Switching servers switches the colours, and the server menu shows a dot in each server's own colour. Switch it off to use the app's colours again.
 - **Highlight colour:** the colour of the open page, buttons and switches. **Auto** uses the menu colour's own; pick one of 24, or the last swatch (+) for any colour.
 - **Menu colour:** the background, sidebar and text colours. 75 to choose from, each shown as a small preview: Default, Dark, OLED (pure black) and Light, Minecraft ones (Diamond, Redstone, Sculk, The End, Cherry Grove...), colour moods (Ocean, Synthwave, Sakura, Matrix...), classic editor schemes (Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night...) and light ones (Paper, Sky, Solarized Light...).
 - **Animations:** fades and slides for pages, the sidebar, panels and colour changes. Switch it off for instant changes.

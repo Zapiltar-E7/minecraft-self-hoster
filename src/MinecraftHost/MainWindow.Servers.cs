@@ -40,6 +40,7 @@ public partial class MainWindow
                             Text = current ? "" : "", FontFamily = (FontFamily)FindResource("Icons"), Width = 22,
                             Foreground = (Brush)FindResource("Accent"), VerticalAlignment = VerticalAlignment.Center,
                         }, Dock.Left),
+                        Docked(LookDot(p), Dock.Right),
                         new StackPanel
                         {
                             Children =
@@ -118,6 +119,7 @@ public partial class MainWindow
         _joinRequests.Clear();
         UpdateJoinRequests();
         UpdateServerIcon();
+        ApplyServerLook();
         SyncWorldCard();
         _players.Clear();
         _services = new();

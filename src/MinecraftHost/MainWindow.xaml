@@ -1111,6 +1111,9 @@
 <TextBlock Style="{StaticResource GroupTitle}" Text="APPEARANCE"/>
 <Border Style="{StaticResource GroupPanel}">
 <StackPanel>
+<local:SettingRow x:Name="ServerLookRow" Icon="&#xE7F4;" Title="Own colours for this server">
+<CheckBox x:Name="ChkServerLook" Style="{StaticResource RowSwitch}" Checked="ChkServerLook_Click" Unchecked="ChkServerLook_Click" AutomationProperties.Name="Own colours for this server"/>
+</local:SettingRow>
 <local:SettingRow Icon="&#xE790;" Title="Highlight colour">
 <local:SettingRow.Hint><TextBlock x:Name="HighlightName" Text=""/></local:SettingRow.Hint>
 <local:SettingRow.Below><ListBox x:Name="HighlightList" Margin="-5,0,0,0" Style="{StaticResource PickerList}" ItemContainerStyle="{StaticResource LookSwatch}"

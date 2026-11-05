@@ -117,6 +117,10 @@ public sealed class ServerProfile
     public int AnnounceRandomMinutes { get; set; } = 15;
     public bool AnnounceRandomOnlyWithPlayers { get; set; } = true;
     public List<string> SeenServices { get; set; } = new();
+    /// <summary>This server's own menu and highlight colours (Settings → Appearance), so it's easy to tell which server the
+    /// window is managing; null ServerTheme: the app's colours (Theme, Highlight).</summary>
+    public string? ServerTheme { get; set; }
+    public string? ServerHighlight { get; set; }
 
     /// <summary>The folder it runs from (null ServerDir is the "server" folder next to the app).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
@@ -178,6 +182,13 @@ public sealed class HostConfig
     public string Theme { get; set; } = "Default";
     public string? Highlight { get; set; }
     public bool Animations { get; set; } = true;
+    /// <summary>This server's own menu and highlight colours (Settings → Appearance), so it's easy to tell which server the
+    /// window is managing; null ServerTheme: the app's colours (Theme, Highlight).</summary>
+    public string? ServerTheme { get; set; }
+    public string? ServerHighlight { get; set; }
+    /// <summary>The colours the window uses for the current server: its own, else the app's.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public (string Theme, string? Highlight) Look => ServerTheme != null ? (ServerTheme, ServerHighlight) : (Theme, Highlight);
     /// <summary>Minimizing hides the window to an icon in the system tray (next to the clock).</summary>
     public bool TrayOnMinimize { get; set; } = true;
     /// <summary>A tray notification when a player joins or leaves while the window is hidden.</summary>

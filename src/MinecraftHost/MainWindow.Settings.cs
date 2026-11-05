@@ -196,6 +196,7 @@ public partial class MainWindow
 
     void InitAppearance()
     {
+        SyncServerLookSwitch();
         FillLookPickers();
         ChkAnimations.IsChecked = Motion.Enabled;
     }
@@ -274,9 +275,61 @@ public partial class MainWindow
         // after the click is done: refilling the list the click came from, inside its own event, upsets its selection
         Dispatcher.BeginInvoke(FillLookPickers);
         var config = HostConfig.LoadOrNew();
-        config.Theme = theme;
-        config.Highlight = highlight;
+        if (config.ServerTheme != null) { config.ServerTheme = theme; config.ServerHighlight = highlight; }   // this server's own
+        else { config.Theme = theme; config.Highlight = highlight; }
         config.Save();
+    }
+
+    // ------------------------------------------------------------ colours per server
+
+    /// <summary>After switching servers: that server's colours (its own, else the app's).</summary>
+    void ApplyServerLook()
+    {
+        var (theme, highlight) = HostConfig.LoadOrNew().Look;
+        if (Themes.Current.Name != Themes.Find(theme).Name || Themes.CurrentHighlight?.Name != Themes.FindHighlight(highlight)?.Name)
+            Themes.Apply(theme, highlight, animate: true);
+        SyncServerLookSwitch();
+        FillLookPickers();
+    }
+
+    void SyncServerLookSwitch()
+    {
+        var config = HostConfig.LoadOrNew();
+        var was = _loading;
+        _loading = true;
+        ChkServerLook.IsChecked = config.ServerTheme != null;
+        _loading = was;
+        var name = config.Current is { } p ? DisplayName(p) : "this server";
+        ServerLookRow.Hint = config.ServerTheme != null
+            ? $"The colours below are {name}'s own. Other servers keep theirs."
+            : $"Give {name} its own colours below, so you can tell at a glance which server you're managing.";
+    }
+
+    void ChkServerLook_Click(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        var config = HostConfig.LoadOrNew();
+        if (ChkServerLook.IsChecked == true)
+        {
+            // starts from the colours showing now; picking below then changes only this server's
+            config.ServerTheme = Themes.Current.Name;
+            config.ServerHighlight = Themes.CurrentHighlight?.Name;
+        }
+        else { config.ServerTheme = null; config.ServerHighlight = null; }
+        config.Save();
+        ApplyServerLook();
+    }
+
+    /// <summary>In the server menu: a dot in the server's own highlight colour, for servers that have their own colours.</summary>
+    FrameworkElement LookDot(ServerProfile p)
+    {
+        if (p.ServerTheme == null) return new FrameworkElement();
+        var accent = Themes.Resolve(Themes.Find(p.ServerTheme), Themes.FindHighlight(p.ServerHighlight))["Accent"];
+        return new System.Windows.Shapes.Ellipse
+        {
+            Width = 10, Height = 10, Margin = new Thickness(14, 0, 2, 0), VerticalAlignment = VerticalAlignment.Center,
+            Fill = new System.Windows.Media.SolidColorBrush(accent), ToolTip = "This server's own colours",
+        };
     }
 
     void ChkAnimations_Click(object sender, RoutedEventArgs e)

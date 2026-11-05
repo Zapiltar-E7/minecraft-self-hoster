@@ -37,7 +37,7 @@ public partial class MainWindow : Window
     {
         var look = HostConfig.Load();
         Motion.Enabled = look?.Animations != false;
-        Themes.Apply(look?.Theme, look?.Highlight, animate: false);
+        Themes.Apply(look?.Look.Theme, look?.Look.Highlight, animate: false);
         InitializeComponent();
         Themes.Changed += () => { DarkTitleBar.Apply(this); UpdateView(); RefreshThemedCards(); };
         // the open page's highlight and the open section's underline slide to the one picked

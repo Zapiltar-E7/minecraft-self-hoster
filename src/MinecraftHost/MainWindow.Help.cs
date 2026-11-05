@@ -127,6 +127,7 @@ public partial class MainWindow
             new(() => BtnCheckNow, "Updates",
                 "Check now looks for a newer version on GitHub (the app also looks by itself now and then). Nothing is installed until you click Download and install, and only a release signed by the developer is accepted."),
             new(() => HighlightList, "Highlight colour", "The colour of the open page, buttons, switches and links. Auto uses the menu colour's own; the others go with any menu colour."),
+            new(() => ChkServerLook, "Own colours for this server", "Gives the server you're managing its own menu and highlight colours. Switching servers switches the colours too, and the server menu shows a dot in each server's colour. Switch off to use the app's colours again."),
             new(() => ChkAnimations, "Animations", "Smooth fades and slides when you switch pages or sections, open panels, fold cards or change colours. Switch off for instant changes."),
             new(() => ThemeList, "Menu colour", "The background, sidebar and text colours: dark ones, light ones, and some tinted ones. Each tile shows a little window in those colours. It changes straight away."),
             helpStep,
